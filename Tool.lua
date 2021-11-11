@@ -89,64 +89,20 @@ function OmniTool:mirroring(x, y, z, ...)
     mirrorX = (self.volSize.x-1) - x
     mirrorY = (self.volSize.y-1) - y
     mirrorZ = (self.volSize.z-1) - z
-    --[[
-    if self.toolMode == self.TOOL_REPLACE then
-        print("evaluating TOOL_REPLACE")
-    print("id of block tapped:\n"..tostring(self.volume:get(x, y, z, BLOCK_ID)))
-    print("id of block validating:\n"..tostring(self.volume:get(mirrorX, mirrorY, mirrorZ, BLOCK_ID)))
-    print("not nil: "..tostring(self.volume:get(mirrorX, mirrorY, mirrorZ, BLOCK_ID) ~= nil))
-    if 
- --       self.volume:get(mirrorX, mirrorY, mirrorZ, BLOCK_ID) ~= 0 
- --   and 
-        not (self.volume:get(mirrorX, mirrorY, mirrorZ, BLOCK_ID) ~= nil 
-        or (self.shouldMirror.x or self.shouldMirror.y or self.shouldMirror.z)) then
-            print("not mirroring")
-            return
-        else 
-            print("am mirroring")
-        end
-    end ]]
     local mX, mY, mZ = x, y, z
-    --[[
-    if self.toolMode == self.TOOL_REPLACE then
-        if self.volume:get(x, y, z, BLOCK_ID) ~= 0 
-        or self.volume:get(x, y, z, BLOCK_ID) ~= nil then   
-                                        
-        else 
-            
-        end
-    end ]]
-    if self.shouldMirror.x then
-            
+    if self.shouldMirror.x then            
         mX = mirrorX
-     --   self.volume:set(mirrorX, y, z, ...) 
     end
     if self.shouldMirror.y then
         mY = mirrorY
-      --  self.volume:set(x, mirrorY, z, BLOCK_ID, idToCopy, ...) 
     end
     if self.shouldMirror.z then
-            mZ = mirrorZ
-      --  self.volume:set(x, y, mirrorZ, BLOCK_ID, idToCopy, ...) 
+        mZ = mirrorZ
     end
-    --[[
-    if self.shouldMirror.x and self.shouldMirror.y then
-        self.volume:set(mirrorX, mirrorY, z, BLOCK_ID, idToCopy, ...) 
+    if self.volume:get(mX, mY, mZ, BLOCK_NAME) == "Empty" 
+    and self.toolMode == self.TOOL_REPLACE then 
+        return 
     end
-    if self.shouldMirror.x and self.shouldMirror.z then
-        self.volume:set(mirrorX, y, mirrorZ, BLOCK_ID, idToCopy, ...) 
-    end
-    if self.shouldMirror.y and self.shouldMirror.z then
-        self.volume:set(x, mirrorY, mirrorZ, BLOCK_ID, idToCopy, ...) 
-    end
-    if self.shouldMirror.x and self.shouldMirror.y and self.shouldMirror.z then
-        self.volume:set(mirrorX, mirrorY, mirrorZ, BLOCK_ID, idToCopy, ...) 
-    end
-    ]]
-    print("evaluating block: ", self.volume:get(mX, mY, mZ, BLOCK_NAME))
-    print(" block tapped name: ", self.volume:get(x, y, z, BLOCK_NAME))
-    if self.volume:get(mX, mY, mZ, BLOCK_NAME) == "Empty" and self.toolMode == self.TOOL_REPLACE then return end
-    print("should be setting to; ", mX, mY, mZ, ...)
     self.volume:set(mX, mY, mZ, ...) 
 end
 
