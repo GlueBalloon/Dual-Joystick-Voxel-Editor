@@ -24,6 +24,7 @@ function OmniTool:init(scene, volumeToAffect, grids, snapshotter, startColor)
     self.snapshotter = snapshotter
     self.state = self.TOOL_STATE_IDLE
     self.runAtColorChange = {}
+    self.runAtColorChange.trackedColor = startColor
     self.volume = volumeToAffect
     local sizeX, sizeY, sizeZ = self.volume:size()
     self.volSize = vec3(sizeX, sizeY, sizeZ)
@@ -76,6 +77,16 @@ function OmniTool:touched(touch)
     end
 
     return false
+end
+
+
+function OmniTool:update(dt)
+    if self.runAtColorChange.trackedColor ~= self.toolColor then
+        for _, func in ipairs(self.runAtColorChange) do
+            func(self.toolColor)
+        end 
+        self.runAtColorChange.trackedColor = self.toolColor
+    end
 end
 
 --if the drag starts on a block that is empty on the mirrored side, it puts a block there, and also any other solid block you drag to from there
@@ -229,9 +240,6 @@ function OmniTool:apply()
             local b = (s>>8) & 255     
             self.toolColor = color(r,g,b)
            -- Color = self.toolColor
-            for _, func in ipairs(self.runAtColorChange) do
-                func(self.toolColor)
-            end
         end
     end 
 end

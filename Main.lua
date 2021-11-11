@@ -35,6 +35,8 @@ function setup()
     G.shelf:setColor(G.tool.toolColor)
     table.insert(G.tool.runAtColorChange, function(aColor) 
         G.shelf:setColor(aColor)
+        red, green, blue = aColor.r, aColor.g, aColor.b
+        Color = aColor
     end)    
     --set up a traffic cop for touches
     G.touchesManager = TouchesManager(G.player, G.tool, G.shelf)
@@ -133,7 +135,17 @@ function addParameters()
     _________________________ = "Select block color below"
     parameter.color("Color", G.shelf.color, function(c)
         G.tool.toolColor = c
-        G.shelf:setColor(c)
+     --   G.shelf:setColor(c)
+    end)
+    
+    parameter.number("red", 0, 255, 250, function(c)
+        G.tool.toolColor = color(c, green, blue)
+    end)
+    parameter.number("green", 0, 255, 250, function(c)
+        G.tool.toolColor = color(red, c, blue)
+    end)
+    parameter.number("blue", 0, 255, 250, function(c)
+        G.tool.toolColor = color(red, green, c)
     end)
     
     parameter.text("Filename", readProjectData("filename") or "VE_LittleFantasyDude",
@@ -184,6 +196,7 @@ end
 function draw()
     update(DeltaTime)
     G.scene:draw()
+    G.tool:update()
     
     G.shelf:update()
     G.shelf:draw()
