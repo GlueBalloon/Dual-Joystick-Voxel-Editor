@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Addons</key>
+	<array>
+		<string>Craft</string>
+	</array>
+	<key>Author</key>
+	<string>John Millard</string>
+	<key>Buffer Order</key>
+	<array>
+		<string>Main</string>
+		<string>UI</string>
+		<string>SingleGrid</string>
+		<string>Tool</string>
+		<string>Stash</string>
+		<string>Shelf</string>
+		<string>TouchesManager</string>
+		<string>Snapshotter</string>
+	</array>
+	<key>Created</key>
+	<string>2016-11-25 08:19:11 +0000</string>
+	<key>Dependencies</key>
+	<array>
+		<string>Craft:Cameras</string>
+		<string>Craft:Touches</string>
+		<string>Craft:Block Library</string>
+		<string>Documents:VoxelWalker</string>
+	</array>
+	<key>Description</key>
+	<string>No description available</string>
+	<key>ExcludesPhoneInstall</key>
+	<true/>
+	<key>Icon</key>
+	<string>Icon.png</string>
+	<key>Introduced</key>
+	<integer>241</integer>
+	<key>Order</key>
+	<integer>5</integer>
+</dict>
+</plist>
