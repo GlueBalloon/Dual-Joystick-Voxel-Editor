@@ -57,15 +57,58 @@ function setup()
     local nameToLoad = readProjectData("filename", "VE_LittleFantasyDude")
     G.snapshotter:loadFile(nameToLoad, {G.tool})
     GridSizeX, GridSizeY, GridSizeZ = G.volume:size()
+    saveProjectData("controlInfoShown", nil)
+    
+    textOpacity = 255
+    textTime = DeltaTime
+    fadeStarted = false
 end
+--[[
+function draw()
+    background(0)   
+    if not infoShown then
+        pushStyle()
+        pushMatrix()
+        resetMatrix()
+        fill(224, 189, 133, textOpacity)
+        font("HelveticaNeue-UltraLight")
+        fontSize(WIDTH * 0.03)
+        textMode(CENTER)
+        textAlign(CENTER)
+        local info ="This is an immersive voxel editor,\n"..
+        "with two-joystick movement controls\n"..
+        "like a mobile game.\n"..
+        "You're not just controlling it, you're playing it!\n\n"..
+        "The left stick controls your 'body',\n"..
+        "the right stick controls your 'head', and\n"..
+        "the helicopter button switches between\n"..
+        " movement and editing.\n"..
+        "Have fun!"
+        text(info, WIDTH/2, HEIGHT/2)
+        if ElapsedTime > 10 then
+            fadeStarted = true
+        end
+        if fadeStarted then
+            textOpacity = textOpacity - 10
+        end
+        popMatrix()
+        popStyle()
+        if textOpacity <= 0 then infoShown = true end
+    end
+end
+end]]
 
 function makePlayer(globals)
     local G = globals
     --make FPS entity
-    G.player = voxelWalkerMaker(G.scene, G.sizeX/2 + 10, G.sizeY/2 + 10, G.sizeZ/2 - 9)
+  --  G.player = djvPlayerMaker(G.scene, G.sizeX/2 - 3.5, G.sizeY/2 - 1, G.sizeZ/2 - 45 )
+    G.player = voxelWalkerMaker(G.scene)
     G.player.camera.farPlane=1000000
+    --G.player.camera.entity.x =1000
     G.player.viewer.rx = 32 --rx goes -90 to 90
     G.player.viewer.ry = -49 --ry goes to -179 to 180
+  --  G.player.viewer.rx = 30 --rx goes -90 to 90
+   -- G.player.viewer.ry = 0 --ry goes to -179 to 180
     G.player.contollerYInputAllowed = true
     --very very odd: if gravity is set before player is made, player just plummets
     --as if gravity is still in effect
@@ -194,6 +237,7 @@ end
 
 -- Perform 2D drawing (UI)
 function draw()
+    background(0)
     update(DeltaTime)
     G.scene:draw()
     G.tool:update()
@@ -207,5 +251,41 @@ function draw()
     
     G.player:update()
     G.player:draw()
+    if not infoShown then
+        if CurrentTouch.state ~= 3 then fadeStarted = true end
+        pushStyle()
+        pushMatrix()
+        resetMatrix()
+        fill(224, 189, 133, textOpacity)
+        font("HelveticaNeue-Light")
+        fontSize(WIDTH * 0.037)
+        textMode(CENTER)
+        textAlign(CENTER)
+        local info ="This is an immersive voxel editor,\n"..
+        "with two-joystick movement controls\n"..
+        "like a mobile game.\n"..
+        "You're not just controlling it, you're playing it!\n\n"..
+        "The left stick controls your 'body',\n"..
+        "the right stick controls your 'head', and\n"..
+        "the helicopter button switches between\n"..
+        " movement and editing.\n"..
+        "Have fun!"
+        text(info, WIDTH/2, HEIGHT/2)
+        if ElapsedTime > 10 then
+            fadeStarted = true
+        end
+        if fadeStarted then
+            textOpacity = textOpacity - 10
+        end
+        popMatrix()
+        popStyle()
+        if textOpacity <= 0 then infoShown = true end
+        print(  "G.player.camera.entity ",  G.player.camera.entity.x, " ",     G.player.camera.entity.y, " ", G.player.camera.entity.z)
+        print(  "G.player.viewer.camera.entity ",  G.player.viewer.camera.entity.x, " ",     G.player.viewer.camera.entity.y, " ", G.player.viewer.camera.entity.z)
+        print(    G.player.camera.x, " ",     G.player.camera.y, " ", G.player.camera.z)
+        print(    G.player.viewer.x, " ",     G.player.viewer.y, " ", G.player.viewer.z)
+        print(    G.player.viewer.camera.x, " ",     G.player.viewer.camera.y, " ", G.player.viewer.camera.z)
+        --print(    G.player.viewer.rx, " ",     G.player.viewer.ry)
+    end
 end
 
