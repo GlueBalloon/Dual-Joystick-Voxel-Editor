@@ -54,9 +54,13 @@ function setup()
         "VE_Car",
     })
     --load last saved model or default model
-    local nameToLoad = readProjectData("filename", "VE_LittleFantasyDude")
+    local nameToLoad = readProjectData("filename", "VE_Blank")
     G.snapshotter:loadFile(nameToLoad, {G.tool})
     GridSizeX, GridSizeY, GridSizeZ = G.volume:size()
+    
+    textOpacity = 255
+    textTime = DeltaTime
+    fadeStarted = false
 end
 
 function makePlayer(globals)
