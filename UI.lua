@@ -187,6 +187,13 @@ end
 UI.Button = class(UI.Panel)
 
 function UI.Button:init(x,y,w,h,t,a)
+    --[[
+    if tostring(stroke()) ~= "255" then
+        print("button init before panel: ", stroke())
+    else
+        print("button detected basic white")
+    end
+    ]]
     UI.Panel.init(self,x,y,w,h)
     self.textFill = color(255, 255, 255, 255)
     self.selectedFill = color(29, 29, 29, 255)
@@ -204,8 +211,16 @@ function UI.Button:init(x,y,w,h,t,a)
     self.highlighted = false
     self.selected = false
     self.action = a or function() end 
-    self.interactive = true    
+    self.interactive = true
+    
     touches.addHandler(self, -2, false)
+--[[
+    if tostring(stroke()) ~= "255" then
+        print("Button end init: ", stroke())
+    else
+        print("Button end init detected basic white")
+    end
+]]
 end
 
 function UI.Button:draw()
@@ -290,6 +305,42 @@ function UI.Label:draw()
     popStyle()
 end
 
+--[[
+
+UI.Swatch = class(UI.Button)
+
+function UI.Swatch:init(x,y,w,h,c)
+    UI.Button.init(self,x,y,w,h)
+    self.color = c
+end
+
+function UI.Swatch:draw()
+    if not self.visible then return end   
+
+    pushStyle()
+    pushMatrix()
+    translate(self.frame.x, self.frame.y)
+    tint(self.color)
+    --ellipseMode(CORNER)
+    --fill(self.color)
+
+    spriteMode(CORNER)
+  
+    local icon = scene.voxels.blocks:get("Solid").icon
+      
+    if self.selected then
+        sprite(icon, 0, 0, self.frame.w, self.frame.h)
+        --ellipse(0,0,self.frame.w,self.frame.h)
+    else
+        sprite(icon, 5, 5, self.frame.w-10, self.frame.h-10)        
+        --ellipse(5,5,self.frame.w-10, self.frame.h-10)
+    end
+
+    popMatrix()
+    popStyle()
+end
+
+]]
 function rRect(w,h,r,c)
 
     fill(c.r, c.g, c.b, c.a)

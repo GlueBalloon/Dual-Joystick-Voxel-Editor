@@ -14,10 +14,11 @@
 		<string>UI</string>
 		<string>SingleGrid</string>
 		<string>Tool</string>
-		<string>Stash</string>
 		<string>Shelf</string>
 		<string>TouchesManager</string>
 		<string>Snapshotter</string>
+		<string>Utilities </string>
+		<string>L</string>
 	</array>
 	<key>Created</key>
 	<string>2016-11-25 08:19:11 +0000</string>
@@ -26,7 +27,7 @@
 		<string>Craft:Cameras</string>
 		<string>Craft:Touches</string>
 		<string>Craft:Block Library</string>
-		<string>Documents:Dual-Joystick Voxel Player</string>
+		<string>Documents:Joystick Player</string>
 	</array>
 	<key>Description</key>
 	<string>No description available</string>

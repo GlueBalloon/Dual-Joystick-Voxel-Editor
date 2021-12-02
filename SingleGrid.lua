@@ -1,8 +1,9 @@
 -- A reusable grid class for drawing the voxel editor grid
 SingleGrid = class()
 
-function SingleGrid:init(scene, normal, origin, spacing, size, enabled)
+function SingleGrid:init(scene, viewPointSource, normal, origin, spacing, size, enabled)
     self.scene = scene
+    self.viewPointSource = viewPointSource
     self.normal = normal
     self.origin = origin
     self.spacing = spacing
@@ -33,7 +34,7 @@ end
 
 -- Checks if the grid is visible based on where the camera is pointed
 function SingleGrid:isVisible()
-    local camVec = self.scene.camera.worldPosition - self.origin
+    local camVec = self.viewPointSource.worldPosition - self.origin
   return self.enabled and self.normal:dot(camVec) > 0.0
 end
 

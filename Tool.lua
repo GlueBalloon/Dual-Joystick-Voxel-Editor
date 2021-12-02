@@ -18,7 +18,8 @@ OmniTool.TOOL_STATE_DRAG = 2
 
 
 
-function OmniTool:init(scene, volumeToAffect, grids, snapshotter, startColor)
+function OmniTool:init(scene, volumeToAffect, grids, snapshotter, startColor, raycastCamera)
+    self.raycastCamera = raycastCamera
     self.grids = grids
     self.scene = scene
     self.snapshotter = snapshotter
@@ -89,8 +90,6 @@ function OmniTool:update(dt)
     end
 end
 
---if the drag starts on a block that is empty on the mirrored side, it puts a block there, and also any other solid block you drag to from there
---if the drag starts on a block that is not empty, it works correctly
 function OmniTool:mirroring(x, y, z, ...)
     if not (self.shouldMirror.x or self.shouldMirror.y or self.shouldMirror.z) then 
         return 
@@ -137,7 +136,6 @@ function OmniTool:applyBox(...)
     local maxY = math.max(self.startCoord.y, self.endCoord.y)
     local minZ = math.min(self.startCoord.z, self.endCoord.z)
     local maxZ = math.max(self.startCoord.z, self.endCoord.z)
-    
     for x = minX, maxX do
         for y = minY, maxY do
             for z = minZ, maxZ do
@@ -159,8 +157,7 @@ function OmniTool:applyLine(...)
         self.volume:set(self.startCoord, ...)
         self:setAndMirror(self.startCoord.x, self.startCoord.y, self.startCoord.x, ...)
         return
-    end
-    
+    end    
     local dir = (self.endCoord-self.startCoord)
     local args = {...}
     self.volume:raycast(self.startCoord + vec3(0.5, 0.5, 0.5), dir:normalize(), dir:len(), function(coord, id, face) 
@@ -195,11 +192,9 @@ function OmniTool:apply()
             local g = (s>>16) & 255   
             local b = (s>>8) & 255     
             self.toolColor = color(r,g,b)
-           -- Color = self.toolColor
         end
     end 
 end
-
 
 function OmniTool:updateGrids(sizeX, sizeY, sizeZ)
     self.grids.right.origin.x = sizeX
@@ -230,7 +225,7 @@ end
 
 -- Helper function for voxel raycasts
 function OmniTool:raycast(x,y,z)
-    local origin, dir = self.scene.camera:get(craft.camera):screenToRay(vec2(x, y))
+    local origin, dir = self.raycastCamera:screenToRay(vec2(x, y))
     local blockID = nil
     local blockCoord = nil
     local blockFace = nil
@@ -267,6 +262,6 @@ function OmniTool:raycast(x,y,z)
         end
         return false
     end)
-    
+    print(blockCoord, blockID, blockFace)
     return blockCoord, blockID, blockFace
 end

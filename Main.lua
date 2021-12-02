@@ -1,9 +1,7 @@
 -----------------------------------------
--- FPS Voxel Editor
--- Written by John Millard
------------------------------------------
+-- First-Person Voxel Editor
 -- Description:
--- FPS version of John Millard's original Voxel Editor.
+-- First-Person version of John Millard's original Voxel Editor.
 -- Use overlay editor to save and load voxels models in the cvox format (Codea Voxel).
 -----------------------------------------
 
@@ -28,7 +26,7 @@ function setup()
     --make grids
     makeGrids(G)    
     --set up voxel drawing tool
-    G.tool = OmniTool(G.scene, G.volume, G.grids, G.snapshotter, color(189, 205, 207))
+    G.tool = OmniTool(G.scene, G.volume, G.grids, G.snapshotter, color(189, 205, 207), G.player.rig.joystickView.camera)
     G.tool.toolType = OmniTool.TOOL_TYPE_BOX
     --make toolbars
     G.shelf = Shelf(G.tool, G.snapshotter)
@@ -54,80 +52,128 @@ function setup()
         "VE_Car",
     })
     --load last saved model or default model
-    local nameToLoad = readProjectData("filename", "VE_LittleFantasyDude")
+    local nameToLoad = readProjectData("filename", "VE_Blank")
     G.snapshotter:loadFile(nameToLoad, {G.tool})
     GridSizeX, GridSizeY, GridSizeZ = G.volume:size()
-    saveProjectData("controlInfoShown", nil)
     
+    --[[
     textOpacity = 255
     textTime = DeltaTime
     fadeStarted = false
+    ]]
 end
---[[
-function draw()
-    background(0)   
-    if not infoShown then
-        pushStyle()
-        pushMatrix()
-        resetMatrix()
-        fill(224, 189, 133, textOpacity)
-        font("HelveticaNeue-UltraLight")
-        fontSize(WIDTH * 0.03)
-        textMode(CENTER)
-        textAlign(CENTER)
-        local info ="This is an immersive voxel editor,\n"..
-        "with two-joystick movement controls\n"..
-        "like a mobile game.\n"..
-        "You're not just controlling it, you're playing it!\n\n"..
-        "The left stick controls your 'body',\n"..
-        "the right stick controls your 'head', and\n"..
-        "the helicopter button switches between\n"..
-        " movement and editing.\n"..
-        "Have fun!"
-        text(info, WIDTH/2, HEIGHT/2)
-        if ElapsedTime > 10 then
-            fadeStarted = true
+
+function colorFromInt(int)
+    local r = (int>>24) & 255
+    local g = (int>>16) & 255   
+    local b = (int>>8) & 255     
+    return color(r, g, b)
+end
+
+function move(up) -- move in selected direction 
+    local sizeX, sizeY, sizeZ = G.volume:size()
+    local volumeTable = {}
+    if not up then
+        for z = 0, sizeZ - 1 do
+            for y = 0, sizeY - 1 do
+                for x = 0, sizeX - 1 do
+                    local blockTable
+                    local id = G.volume:get(vec3(x, y, z), BLOCK_ID)
+                    local newVec = vec3(x, y, z) - vec3(0, 1, 0)
+                    if y == 0 then
+                        newVec.y = sizeY - 1
+                    end
+                    local colorInt = G.volume:get(x, y, z, BLOCK_STATE)
+                    if colorInt ~= 0 then
+                        blockTable = {newVec, BLOCK_ID, id, "color", colorFromInt(colorInt)}
+                    else 
+                        blockTable = {newVec, BLOCK_ID, id}
+                    end
+                    table.insert(volumeTable, blockTable)
+                end
+            end
         end
-        if fadeStarted then
-            textOpacity = textOpacity - 10
+    else
+        for z = sizeZ - 1, 0, -1 do
+            for y = sizeY - 1, 0, -1 do
+                for x = sizeX - 1, 0, -1 do
+                    local blockTable
+                    local id = G.volume:get(vec3(x, y, z), BLOCK_ID)
+                    local newVec = vec3(x, y, z) + vec3(0, 1, 0)
+                    if newVec.y == sizeY then
+                        newVec.y = 0
+                    end
+                    local colorInt = G.volume:get(x, y, z, BLOCK_STATE)
+                    if colorInt then
+                        blockTable = {newVec, BLOCK_ID, id, "color", colorFromInt(colorInt)}
+                    else 
+                        blockTable = {newVec, BLOCK_ID, id}
+                    end
+                    table.insert(volumeTable, blockTable)
+                end
+            end
         end
-        popMatrix()
-        popStyle()
-        if textOpacity <= 0 then infoShown = true end
+    end
+    for i, blockTable in ipairs(volumeTable) do
+        G.volume:set(table.unpack(blockTable))
     end
 end
-end]]
+
+function makeLegacyPlayer(globals)
+    G.player = voxelWalkerMaker(G.scene, G.sizeX/2 + 10, G.sizeY/2 + 10, G.sizeZ/2 - 9)
+    G.player.isLegacy = true
+    G.player.position = vec3(G.sizeX/2 + 10, G.sizeY/2 + 10, G.sizeZ/2 - 9)
+    
+    G.player.camera.farPlane=1000000
+    G.player.viewer.rx = 32 --rx goes -90 to 90
+    G.player.viewer.ry = -49 --ry goes to -179 to 180
+    
+    G.player.contollerYInputAllowed = true
+    G.scene.physics.gravity = vec3(0,0,0)
+    G.player.linearDamping = 5.95
+
+    touches.removeHandler(G.player)
+end
+
+function makeRigBasedPlayer(globals)
+    --make a camera/entity hybrid
+    local camThing = makeCameraViewerEntityThing(G.scene)    
+    G.player = camThing
+    --its camera is initially placed inside the body for a first-person view
+    G.player = joystickWalkerRig(camThing, G.scene)
+    --G.player = doubleJoystickRig(camThing)
+    G.player.position = vec3(G.sizeX/2 + 10, G.sizeY/2 + 10, G.sizeZ/2 - 9)
+    G.player.rig.joystickView.rx = 32 --rx goes -90 to 90
+    G.player.rig.joystickView.ry = -49 --ry goes to -179 to 180
+    G.player.rig.joystickView.farPlane(1000000)
+    
+    G.player.rig.contollerYInputAllowed = true
+    G.scene.physics.gravity = vec3(0,0,0)
+    G.player.rig.linearDamping = 0.95
+
+    touches.removeHandler(G.player)
+    G.player.rig.joystickView.rx = 29
+    G.player.rig.joystickView.ry = -38
+    G.player.rig.joystickView.rig.camRxRy(29, -38)
+end
 
 function makePlayer(globals)
     local G = globals
-    --make FPS entity
-  --  G.player = djvPlayerMaker(G.scene, G.sizeX/2 - 3.5, G.sizeY/2 - 1, G.sizeZ/2 - 45 )
-    G.player = voxelWalkerMaker(G.scene)
-    G.player.camera.farPlane=1000000
-    --G.player.camera.entity.x =1000
-    G.player.viewer.rx = 32 --rx goes -90 to 90
-    G.player.viewer.ry = -49 --ry goes to -179 to 180
-  --  G.player.viewer.rx = 30 --rx goes -90 to 90
-   -- G.player.viewer.ry = 0 --ry goes to -179 to 180
-    G.player.contollerYInputAllowed = true
-    --very very odd: if gravity is set before player is made, player just plummets
-    --as if gravity is still in effect
-    G.scene.physics.gravity = vec3(0,0,0)
-    G.player.rb.linearDamping = 0.95
-    --keep it from directly handling touches
-    touches.removeHandler(G.player)
+    -- makeLegacyPlayer(G)
+    makeRigBasedPlayer(G)
 end
 
 function makeGrids(globals)
     local G = globals
+    local camThing = G.player.rig.joystickView
     G.grids = 
     {
-        bottom = SingleGrid(G.scene, vec3(0,1,0), vec3(0,0,0), 1, vec3(G.sizeX,G.sizeY,G.sizeZ), true),
-        top = SingleGrid(G.scene, vec3(0,-1,0), vec3(0,G.sizeY,0), 1, vec3(G.sizeX,G.sizeY,G.sizeZ), true),
-        left = SingleGrid(G.scene, vec3(1,0,0), vec3(0,0,0), 1, vec3(G.sizeX,G.sizeY,G.sizeZ), true),
-        right = SingleGrid(G.scene, vec3(-1,0,0), vec3(G.sizeX,0,0), 1, vec3(G.sizeX,G.sizeY,G.sizeZ), true),
-        front = SingleGrid(G.scene, vec3(0,0,1), vec3(0,0,0), 1, vec3(G.sizeX,G.sizeY,G.sizeZ), true),
-        back = SingleGrid(G.scene, vec3(0,0,-1), vec3(0,0,G.sizeZ), 1, vec3(G.sizeX,G.sizeY,G.sizeZ), true) 
+        bottom = SingleGrid(G.scene, camThing, vec3(0,1,0), vec3(0,0,0), 1, vec3(G.sizeX,G.sizeY,G.sizeZ), true),
+        top = SingleGrid(G.scene, camThing, vec3(0,-1,0), vec3(0,G.sizeY,0), 1, vec3(G.sizeX,G.sizeY,G.sizeZ), true),
+        left = SingleGrid(G.scene, camThing, vec3(1,0,0), vec3(0,0,0), 1, vec3(G.sizeX,G.sizeY,G.sizeZ), true),
+        right = SingleGrid(G.scene, camThing, vec3(-1,0,0), vec3(G.sizeX,0,0), 1, vec3(G.sizeX,G.sizeY,G.sizeZ), true),
+        front = SingleGrid(G.scene, camThing, vec3(0,0,1), vec3(0,0,0), 1, vec3(G.sizeX,G.sizeY,G.sizeZ), true),
+        back = SingleGrid(G.scene, camThing, vec3(0,0,-1), vec3(0,0,G.sizeZ), 1, vec3(G.sizeX,G.sizeY,G.sizeZ), true) 
     }
 end
 
@@ -174,6 +220,11 @@ function setUpSavedStates(saveFileNames)
 end
 
 function addParameters()
+    nudgeTimer = 0
+    parameter.integer("nudgeX", -1, 1, 0)
+    parameter.integer("nudgeY", -1, 1, 0)
+    parameter.integer("nudgeZ", -1, 1, 0)
+        
     parameter.watch("_________________________")
     _________________________ = "Select block color below"
     parameter.color("Color", G.shelf.color, function(c)
@@ -225,7 +276,7 @@ end
 
 function update(dt) 
     G.scene:update(dt)
-       
+
     for k,v in pairs(G.grids) do
         v:update()
     end
@@ -233,11 +284,12 @@ function update(dt)
     if G.tool.shouldResize then
         G.tool:resizeVolume(G.sizeX, G.sizeY, G.sizeZ)
     end
+
+    nudgeCheck()
 end
 
 -- Perform 2D drawing (UI)
 function draw()
-    background(0)
     update(DeltaTime)
     G.scene:draw()
     G.tool:update()
@@ -249,43 +301,12 @@ function draw()
     G.shelf.screenTopPanel:update()
     G.shelf.screenTopPanel:draw()
     
-    G.player:update()
-    G.player:draw()
-    if not infoShown then
-        if CurrentTouch.state ~= 3 then fadeStarted = true end
-        pushStyle()
-        pushMatrix()
-        resetMatrix()
-        fill(224, 189, 133, textOpacity)
-        font("HelveticaNeue-Light")
-        fontSize(WIDTH * 0.037)
-        textMode(CENTER)
-        textAlign(CENTER)
-        local info ="This is an immersive voxel editor,\n"..
-        "with two-joystick movement controls\n"..
-        "like a mobile game.\n"..
-        "You're not just controlling it, you're playing it!\n\n"..
-        "The left stick controls your 'body',\n"..
-        "the right stick controls your 'head', and\n"..
-        "the helicopter button switches between\n"..
-        " movement and editing.\n"..
-        "Have fun!"
-        text(info, WIDTH/2, HEIGHT/2)
-        if ElapsedTime > 10 then
-            fadeStarted = true
-        end
-        if fadeStarted then
-            textOpacity = textOpacity - 10
-        end
-        popMatrix()
-        popStyle()
-        if textOpacity <= 0 then infoShown = true end
-        print(  "G.player.camera.entity ",  G.player.camera.entity.x, " ",     G.player.camera.entity.y, " ", G.player.camera.entity.z)
-        print(  "G.player.viewer.camera.entity ",  G.player.viewer.camera.entity.x, " ",     G.player.viewer.camera.entity.y, " ", G.player.viewer.camera.entity.z)
-        print(    G.player.camera.x, " ",     G.player.camera.y, " ", G.player.camera.z)
-        print(    G.player.viewer.x, " ",     G.player.viewer.y, " ", G.player.viewer.z)
-        print(    G.player.viewer.camera.x, " ",     G.player.viewer.camera.y, " ", G.player.viewer.camera.z)
-        --print(    G.player.viewer.rx, " ",     G.player.viewer.ry)
+    if G.player.isLegacy then
+        G.player:update()
+        G.player:draw() 
+    else
+        if G.player.update then G.player.update() end
+        if G.player.draw then G.player.draw() end
     end
 end
 
