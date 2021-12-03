@@ -1,6 +1,6 @@
-Snapshotter = class()
+VolumeTools = class()
 
-function Snapshotter:init(volume)
+function VolumeTools:init(volume)
     self.volume = volume
     self.snapshots = {}
     self.snapshots.redoQueue = {}
@@ -8,7 +8,7 @@ function Snapshotter:init(volume)
 end
 
 -- Save a snapshot of the current voxel volume (for editing and undo)
-function Snapshotter:saveSnapshot()
+function VolumeTools:saveSnapshot()
     table.insert(self.snapshots, self.volume:saveSnapshot()) 
     if self.snapshots.redoQueue.emptyOnNextSnapshot then
         for i=#self.snapshots.redoQueue, 1, -1 do
@@ -18,12 +18,13 @@ function Snapshotter:saveSnapshot()
     end
 end
 
-function Snapshotter:saveFile(filename)
+--save a volume file
+function VolumeTools:saveFile(filename)
     self.volume:save("Documents:"..filename..".cvox")
 end
 
 --load a saved file
-function Snapshotter:loadFile(filename, delegates)
+function VolumeTools:loadFile(filename, delegates)
     self.volume:load("Documents:"..Filename)
     local sizeX, sizeY, sizeZ = self.volume:size()
     self.currentSnapshotGridSize = vec3(sizeX, sizeY, sizeZ)
@@ -33,11 +34,10 @@ function Snapshotter:loadFile(filename, delegates)
         delegate:updateGrids(sizeX, sizeY, sizeZ)
     end
     self:saveSnapshot()
-    print(table.unpack(G.scene.voxels.blocks:all()))
 end
 
 --undo
-function Snapshotter:undo()
+function VolumeTools:undo()
     local spShots = self.snapshots
     if #spShots > 1 then
         table.insert(spShots.redoQueue, spShots[#spShots])
@@ -47,7 +47,7 @@ function Snapshotter:undo()
 end
 
 --redo
-function Snapshotter:redo()
+function VolumeTools:redo()
     local spShots = self.snapshots
     local redoQueue = spShots.redoQueue
     if #redoQueue >= 1 then
@@ -58,40 +58,50 @@ function Snapshotter:redo()
     redoQueue.emptyOnNextSnapshot = true
 end
 
-function nudgeCheck()
-    if nudgeTimer == 0 then
-        if nudgeX ~= 0 then
-            move(nudgeX, 0, 0)
-            nudgeTimer = ElapsedTime
-        end
-        if nudgeY ~= 0 then
-            move(0, nudgeY, 0)
-            nudgeTimer = ElapsedTime
-        end
-        if nudgeZ ~= 0 then
-            move(0, 0, nudgeZ)
-            nudgeTimer = ElapsedTime
-        end
-    elseif ElapsedTime - nudgeTimer > 0.25 then
-        nudgeX, nudgeY, nudgeZ = 0, 0, 0
-        nudgeTimer = 0
+function VolumeTools:clear()
+    self:iterate(function(x, y, z)
+      self.volume:set(x,y,z,BLOCK_ID,0)
+    end)
+end
+
+function VolumeTools:nudge(nudgeX, nudgeY, nudgeZ)
+    if nudgeX ~= 0 then
+        self:move(nudgeX, 0, 0)
+    end
+    if nudgeY ~= 0 then
+        self:move(0, nudgeY, 0)
+    end
+    if nudgeZ ~= 0 then
+        self:move(0, 0, nudgeZ)
     end
 end
 
-function extractPositions()   
+function VolumeTools:iterate(xyzFunction)
+    local vX, vY, vZ = self.volume:size()
+    vX, vY, vZ = vX - 1, vY - 1, vZ -1
+    for x=0, vX do
+        for y=0, vY do
+            for z=0, vZ do               
+                --xyzFunction(x,y,z)
+            end
+        end
+    end 
+end
+
+function VolumeTools:extractBlockData()   
     -- read the voxel area
     -- save block data
     -- clear blocks with EMPTY
     tab={}
-    local vX, vY, vZ = G.volume:size()
+    local vX, vY, vZ = self.volume:size()
     vX, vY, vZ = vX - 1, vY - 1, vZ -1
     for x=0, vX do
         for y=0, vY do
             for z=0, vZ do
                 -- get the name of the voxel at x,y,z
-                local name=G.volume:get(x,y,z,BLOCK_ID)
+                local name = self.volume:get(x,y,z,BLOCK_ID)
                 local pos = vec3(x, y, z)
-                local colorInt = G.volume:get(x, y, z, BLOCK_STATE)
+                local colorInt = self.volume:get(x, y, z, BLOCK_STATE)
                 local blockTable = {vec3(x,y,z), BLOCK_ID, name}
                 if colorInt ~= 0 then
                     table.insert(blockTable, COLOR)
@@ -100,15 +110,14 @@ function extractPositions()
                 -- put x,y,z and name in a table for later
                 table.insert(tab,blockTable)
                 -- set voxel block to EMPTY
-                G.scene.voxels:fill(EMPTY)
-                G.scene.voxels:block(x,y,z)
+                self.volume:set(x,y,z,BLOCK_ID,0)
             end
         end
     end 
 end
 
-function move(x,y,z)  
-    extractPositions() 
+function VolumeTools:move(x,y,z)  
+    self:extractBlockData() 
     local vX, vY, vZ = G.volume:size()
     vX, vY, vZ = vX - 1, vY - 1, vZ -1
     for a,b in pairs(tab) do 
@@ -128,6 +137,6 @@ function move(x,y,z)
         else
             pos = vec3(pos.x+x,pos.y+y,pos.z+z)
         end
-        G.volume:set(pos,table.unpack(b))
+        self.volume:set(pos,table.unpack(b))
     end
 end

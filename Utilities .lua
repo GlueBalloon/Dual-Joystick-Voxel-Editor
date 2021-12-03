@@ -24,3 +24,10 @@ function fontSizeToFitRect(textToFit, x, y, w, h)
     end    
     return fSize
 end
+
+function colorFromInt(int)
+    local r = (int>>24) & 255
+    local g = (int>>16) & 255   
+    local b = (int>>8) & 255     
+    return color(r, g, b)
+end

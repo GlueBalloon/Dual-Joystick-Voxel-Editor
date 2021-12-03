@@ -2,7 +2,7 @@
 
 Shelf = class(UI.Panel)
 
-function Shelf:init(omniTool, snapshotter, standardizedUnit, buttonRadius, x, y, w, h)
+function Shelf:init(omniTool, volumeTools, standardizedUnit, buttonRadius, x, y, w, h)
     self.unit = standardizedUnit or math.min(WIDTH / 10, HEIGHT / 10)
     self.buttonRadius = buttonRadius or math.min(self.unit * 1.2, 90) 
     x = x or WIDTH - self.buttonRadius * 1.05
@@ -14,7 +14,7 @@ function Shelf:init(omniTool, snapshotter, standardizedUnit, buttonRadius, x, y,
     self.fill = nil
     self.startColor = color(12, 87, 215)
     self.tool = omniTool
-    self.snapshotter = snapshotter
+    self.volumeTools = volumeTools
     local paddingBetweenSections = self.unit * 0.3
 
     --make buttons that have to be accessed outside this class
@@ -111,12 +111,12 @@ function Shelf:init(omniTool, snapshotter, standardizedUnit, buttonRadius, x, y,
     
     local undoButton = self:roundButton("↩️", "undo")
     undoButton.action = function(b) 
-        self.snapshotter:undo()
+        self.volumeTools:undo()
         self.toolTip = undoButton.toolTipText 
     end
     local redoButton = self:roundButton("↪️", "redo")
     redoButton.action = function(b) 
-        self.snapshotter:redo() 
+        self.volumeTools:redo() 
         self.toolTip = redoButton.toolTipText 
     end
     self:makeSection("undo/redo", 
@@ -148,15 +148,15 @@ function Shelf:draw()
         pushStyle()
         pushMatrix()
         resetMatrix()
-        fill(0, 255, 251, self.toolTipOpacity)
         font("HelveticaNeue-Light")
         fontSize(self.toolTipFontSize)
         textMode(CENTER)
         textAlign(CENTER)
         pushStyle()
-        fill(27, 28, 51, self.toolTipOpacity)
-        text(self.toolTip, WIDTH/2 + 2, HEIGHT/2 - 2)
+        fill(30, 126, 107)
+        text(self.toolTip, WIDTH/2 + 1, HEIGHT/2 - 2)
         popStyle()
+        fill(0, 255, 240)
         text(self.toolTip, WIDTH/2, HEIGHT/2)
         popMatrix()
         popStyle()

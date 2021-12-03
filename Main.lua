@@ -20,16 +20,18 @@ function setup()
     G.volume = G.scene:entity():add(craft.volume, 20, 20, 20)
     G.sizeX, G.sizeY, G.sizeZ = G.volume:size()   
     --make save/load and undo/redo system
-    G.snapshotter = Snapshotter(G.volume)
+    G.volumeTools = VolumeTools(G.volume)
+    --make counter to keep nudges from happening too fast
+    G.nudgeTimer = 0
     --make player
     makePlayer(G)
     --make grids
     makeGrids(G)    
     --set up voxel drawing tool
-    G.tool = OmniTool(G.scene, G.volume, G.grids, G.snapshotter, color(189, 205, 207), G.player.rig.joystickView.camera)
+    G.tool = OmniTool(G.scene, G.volume, G.grids, G.volumeTools, color(189, 205, 207), G.player.rig.joystickView.camera)
     G.tool.toolType = OmniTool.TOOL_TYPE_BOX
     --make toolbars
-    G.shelf = Shelf(G.tool, G.snapshotter)
+    G.shelf = Shelf(G.tool, G.volumeTools)
     G.shelf:setColor(G.tool.toolColor)
     table.insert(G.tool.runAtColorChange, function(aColor) 
         G.shelf:setColor(aColor)
@@ -53,7 +55,7 @@ function setup()
     })
     --load last saved model or default model
     local nameToLoad = readProjectData("filename", "VE_Blank")
-    G.snapshotter:loadFile(nameToLoad, {G.tool})
+    G.volumeTools:loadFile(nameToLoad, {G.tool})
     GridSizeX, GridSizeY, GridSizeZ = G.volume:size()
     
     --[[
@@ -61,62 +63,6 @@ function setup()
     textTime = DeltaTime
     fadeStarted = false
     ]]
-end
-
-function colorFromInt(int)
-    local r = (int>>24) & 255
-    local g = (int>>16) & 255   
-    local b = (int>>8) & 255     
-    return color(r, g, b)
-end
-
-function move(up) -- move in selected direction 
-    local sizeX, sizeY, sizeZ = G.volume:size()
-    local volumeTable = {}
-    if not up then
-        for z = 0, sizeZ - 1 do
-            for y = 0, sizeY - 1 do
-                for x = 0, sizeX - 1 do
-                    local blockTable
-                    local id = G.volume:get(vec3(x, y, z), BLOCK_ID)
-                    local newVec = vec3(x, y, z) - vec3(0, 1, 0)
-                    if y == 0 then
-                        newVec.y = sizeY - 1
-                    end
-                    local colorInt = G.volume:get(x, y, z, BLOCK_STATE)
-                    if colorInt ~= 0 then
-                        blockTable = {newVec, BLOCK_ID, id, "color", colorFromInt(colorInt)}
-                    else 
-                        blockTable = {newVec, BLOCK_ID, id}
-                    end
-                    table.insert(volumeTable, blockTable)
-                end
-            end
-        end
-    else
-        for z = sizeZ - 1, 0, -1 do
-            for y = sizeY - 1, 0, -1 do
-                for x = sizeX - 1, 0, -1 do
-                    local blockTable
-                    local id = G.volume:get(vec3(x, y, z), BLOCK_ID)
-                    local newVec = vec3(x, y, z) + vec3(0, 1, 0)
-                    if newVec.y == sizeY then
-                        newVec.y = 0
-                    end
-                    local colorInt = G.volume:get(x, y, z, BLOCK_STATE)
-                    if colorInt then
-                        blockTable = {newVec, BLOCK_ID, id, "color", colorFromInt(colorInt)}
-                    else 
-                        blockTable = {newVec, BLOCK_ID, id}
-                    end
-                    table.insert(volumeTable, blockTable)
-                end
-            end
-        end
-    end
-    for i, blockTable in ipairs(volumeTable) do
-        G.volume:set(table.unpack(blockTable))
-    end
 end
 
 function makeLegacyPlayer(globals)
@@ -220,18 +166,10 @@ function setUpSavedStates(saveFileNames)
 end
 
 function addParameters()
-    nudgeTimer = 0
-    parameter.integer("nudgeX", -1, 1, 0)
-    parameter.integer("nudgeY", -1, 1, 0)
-    parameter.integer("nudgeZ", -1, 1, 0)
-        
-    parameter.watch("_________________________")
-    _________________________ = "Select block color below"
+
     parameter.color("Color", G.shelf.color, function(c)
         G.tool.toolColor = c
-     --   G.shelf:setColor(c)
     end)
-    
     parameter.number("red", 0, 255, G.tool.toolColor.r, function(c)
         G.tool.toolColor = color(c, green, blue)
     end)
@@ -242,10 +180,26 @@ function addParameters()
         G.tool.toolColor = color(red, green, c)
     end)
     
+    
     parameter.text("Filename", readProjectData("filename") or "VE_LittleFantasyDude",
     function(t)
         saveProjectData("filename", Filename)
     end)
+    parameter.action("Load", function()
+        G.volumeTools:loadFile("Documents:"..Filename, {G.tool})
+        G.volumeTools:saveSnapshot()
+        GridSizeX, GridSizeY, GridSizeZ = G.volume:size()
+    end)
+    
+    parameter.action("Save", function() 
+        G.volumeTools:saveFile(Filename)
+    end)    
+    
+    parameter.integer("nudgeX", -1, 1, 0)
+    parameter.integer("nudgeY", -1, 1, 0)
+    parameter.integer("nudgeZ", -1, 1, 0)
+    
+    parameter.action("Clear All", function() G.volumeTools:clear() end)
     
     parameter.integer("GridSizeX", 5, 50, 20, function(s)
         G.sizeX = s
@@ -261,16 +215,6 @@ function addParameters()
         G.sizeZ = s
         G.tool.shouldResize = true
     end)
-        
-    parameter.action("Load", function()
-        G.snapshotter:loadFile("Documents:"..Filename, {G.tool})
-        G.snapshotter:saveSnapshot()
-        GridSizeX, GridSizeY, GridSizeZ = G.volume:size()
-    end)
-    
-    parameter.action("Save", function() 
-        G.snapshotter:saveFile(Filename)
-    end)    
 
 end
 
@@ -284,8 +228,20 @@ function update(dt)
     if G.tool.shouldResize then
         G.tool:resizeVolume(G.sizeX, G.sizeY, G.sizeZ)
     end
-
+    
     nudgeCheck()
+end
+
+function nudgeCheck()
+    if G.nudgeTimer == 0 then 
+        if (nudgeX ~= 0) or (nudgeY ~= 0) or (nudgeZ ~= 0) then
+            G.volumeTools:nudge(nudgeX, nudgeY, nudgeZ) 
+            G.nudgeTimer = ElapsedTime
+        end
+    elseif ElapsedTime - G.nudgeTimer > 0.25 then
+        G.nudgeTimer = 0
+    end
+    nudgeX, nudgeY, nudgeZ = 0, 0, 0
 end
 
 -- Perform 2D drawing (UI)

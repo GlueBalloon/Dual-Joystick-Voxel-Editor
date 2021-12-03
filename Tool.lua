@@ -18,11 +18,11 @@ OmniTool.TOOL_STATE_DRAG = 2
 
 
 
-function OmniTool:init(scene, volumeToAffect, grids, snapshotter, startColor, raycastCamera)
+function OmniTool:init(scene, volumeToAffect, grids, volumeTools, startColor, raycastCamera)
     self.raycastCamera = raycastCamera
     self.grids = grids
     self.scene = scene
-    self.snapshotter = snapshotter
+    self.volumeTools = volumeTools
     self.state = self.TOOL_STATE_IDLE
     self.runAtColorChange = {}
     self.runAtColorChange.trackedColor = startColor
@@ -37,9 +37,9 @@ function OmniTool:init(scene, volumeToAffect, grids, snapshotter, startColor, ra
 end
 
 function OmniTool:touched(touch)   
-    local snapr = self.snapshotter
-    if #snapr.snapshots > 0 then
-        self.volume:loadSnapshot(snapr.snapshots[#snapr.snapshots])
+    local vTools = self.volumeTools
+    if #vTools.snapshots > 0 then
+        self.volume:loadSnapshot(vTools.snapshots[#vTools.snapshots])
     end
 
     local coord, id, face = self:raycast(touch.x, touch.y, false)
@@ -73,7 +73,7 @@ function OmniTool:touched(touch)
     elseif touch.state == ENDED and self.state == self.TOOL_STATE_DRAG then
         self.state = self.TOOL_STATE_IDLE
         self:apply()
-        self.snapshotter:saveSnapshot()
+        self.volumeTools:saveSnapshot()
         return true
     end
 
@@ -219,7 +219,7 @@ function OmniTool:resizeVolume(sizeX, sizeY, sizeZ)
         viewer.origin = viewer.target
         
         self.shouldResize = false
-        self.snapshotter:saveSnapshot()
+        self.volumeTools:saveSnapshot()
     end
 end
 
@@ -262,6 +262,5 @@ function OmniTool:raycast(x,y,z)
         end
         return false
     end)
-    print(blockCoord, blockID, blockFace)
     return blockCoord, blockID, blockFace
 end
