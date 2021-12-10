@@ -86,7 +86,8 @@ function makeRigBasedPlayer(globals)
     local camThing = makeCameraViewerEntityThing(G.scene)    
     G.player = camThing
     --its camera is initially placed inside the body for a first-person view
-    G.player = joystickWalkerRig(camThing, G.scene)
+    local stroke1, stroke2 = color(30, 126, 107, 157),color(0, 255, 240, 159)
+    G.player = joystickWalkerRig(camThing, G.scene, nil, stroke1, stroke2)
     --G.player = doubleJoystickRig(camThing)
     G.player.position = vec3(G.sizeX/2 + 10, G.sizeY/2 + 10, G.sizeZ/2 - 9)
     G.player.rig.joystickView.rx = 32 --rx goes -90 to 90
