@@ -139,4 +139,5 @@ function VolumeTools:move(x,y,z)
         end
         self.volume:set(pos,table.unpack(b))
     end
+    self:saveSnapshot()
 end

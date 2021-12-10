@@ -55,7 +55,6 @@ function OmniTool:touched(touch)
     end
     
     if coord and touch.state == BEGAN and self.state == self.TOOL_STATE_IDLE then
-        --if #G.player.touches > 0 then return false end
         self.startCoord = coord
         self.endCoord = coord
         self.state = self.TOOL_STATE_DRAG
