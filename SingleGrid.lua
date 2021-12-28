@@ -41,14 +41,15 @@ end
 function SingleGrid:modified()
     local gx = self.size[self.axes2[1]]
     local gy = self.size[self.axes2[2]]
-
-    self.img = image(gx * 20, gy * 20)
-
+    print("gx, gy: ", gx, gy)
+    self.img = image((gx + 10) * 20, (gy + 10) * 20)
+    print("imgW, imgH: ", self.img.width, self.img.height)
     self.r.material.map = self.img
 
     -- Pre-render the grid to an image to make it look nicer (anti-aliasing)
     setContext(self.img)
-    background(0,0,0,0)
+    background(48, 217, 211, 25)
+    background(217, 48, 177, 25)
     pushStyle()
     local gridColor = color(225, 175, 124, 186)
     stroke(gridColor)
@@ -60,7 +61,7 @@ function SingleGrid:modified()
     strokeWidth(2)
     stroke(gridColor)
 
-    for x = 1,gx-1 do
+    for x = 1, gx-1 do
         line(x * (self.img.width/gx), 3, x * (self.img.width/gx), self.img.height-3)
     end
 

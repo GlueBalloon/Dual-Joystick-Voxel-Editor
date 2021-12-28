@@ -95,9 +95,16 @@ function OmniTool:mirroring(x, y, z, ...)
     end
     local idToCopy = self.volume:get(x, y, z, BLOCK_ID)
     local mirrorX, mirrorY, mirrorZ
-    mirrorX = (self.volSize.x-1) - x
-    mirrorY = (self.volSize.y-1) - y
-    mirrorZ = (self.volSize.z-1) - z
+    --[[
+    0 1 2 3 4 5 6 7 8
+      x     x     x
+    0 1 2 3 4 5 6 7
+    x.    y y     x
+    ]]
+    mirrorX = (self.volSize.x - 1) - x
+    print("x, self.volSize.x, mirrorX: ", x, self.volSize.x, mirrorX)
+    mirrorY = (self.volSize.y - 1) - y
+    mirrorZ = (self.volSize.z - 1) - z
     local mX, mY, mZ = x, y, z
     if self.shouldMirror.x then            
         mX = mirrorX
@@ -113,6 +120,23 @@ function OmniTool:mirroring(x, y, z, ...)
         return 
     end
     self.volume:set(mX, mY, mZ, ...) 
+    if self.shouldMirror.x and self.shouldMirror.y then
+        self.volume:set(x, mY, z, ...)
+        self.volume:set(mX, y, z, ...)
+    end
+    if self.shouldMirror.y and self.shouldMirror.z then
+        self.volume:set(x, mY, z, ...)
+        self.volume:set(x, y, mZ, ...)
+    end
+    if self.shouldMirror.x and self.shouldMirror.z then
+        self.volume:set(mX, y, z, ...)
+        self.volume:set(x, y, mZ, ...)
+    end
+    if self.shouldMirror.x and self.shouldMirror.y and self.shouldMirror.z then
+        self.volume:set(mX, mY, z, ...)
+        self.volume:set(mX, y, mZ, ...)
+        self.volume:set(x, mY, mZ, ...)
+    end
 end
 
 
@@ -199,7 +223,7 @@ function OmniTool:updateGrids(sizeX, sizeY, sizeZ)
     self.grids.right.origin.x = sizeX
     self.grids.back.origin.z = sizeZ
     self.grids.top.origin.y = sizeY
-    for _,grid in pairs(self.grids) do
+    for _, grid in pairs(self.grids) do
         grid.size.x = sizeX
         grid.size.y = sizeY
         grid.size.z = sizeZ

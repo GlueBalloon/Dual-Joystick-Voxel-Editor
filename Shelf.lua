@@ -105,7 +105,7 @@ function Shelf:init(omniTool, volumeTools, standardizedUnit, buttonRadius, x, y,
     {
         self:makeRoundToolButton("✏️", OmniTool.TOOL_ADD, "add blocks"),
         self:makeRoundToolButton("💣", OmniTool.TOOL_ERASE, "delete blocks"), 
-        self:makeRoundToolButton("💅🏻", OmniTool.TOOL_REPLACE, "re-color blocks"),
+        self:makeRoundToolButton("💅🏻", OmniTool.TOOL_REPLACE, "change blocks' color"),
         self:makeRoundToolButton("💉", OmniTool.TOOL_GET, "get color")
     }, true)
     
