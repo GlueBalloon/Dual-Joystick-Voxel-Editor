@@ -41,9 +41,7 @@ end
 function SingleGrid:modified()
     local gx = self.size[self.axes2[1]]
     local gy = self.size[self.axes2[2]]
-    print("gx, gy: ", gx, gy)
     self.img = image((gx + 10) * 20, (gy + 10) * 20)
-    print("imgW, imgH: ", self.img.width, self.img.height)
     self.r.material.map = self.img
 
     -- Pre-render the grid to an image to make it look nicer (anti-aliasing)

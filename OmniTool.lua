@@ -94,55 +94,48 @@ function OmniTool:mirroring(x, y, z, ...)
         return 
     end
     local idToCopy = self.volume:get(x, y, z, BLOCK_ID)
-    local mirrorX, mirrorY, mirrorZ
-    --[[
-    0 1 2 3 4 5 6 7 8
-      x     x     x
-    0 1 2 3 4 5 6 7
-    x.    y y     x
-    ]]
-    mirrorX = (self.volSize.x - 1) - x
-    print("x, self.volSize.x, mirrorX: ", x, self.volSize.x, mirrorX)
-    mirrorY = (self.volSize.y - 1) - y
-    mirrorZ = (self.volSize.z - 1) - z
     local mX, mY, mZ = x, y, z
     if self.shouldMirror.x then            
-        mX = mirrorX
+        mX = (self.volSize.x - 1) - x
     end
     if self.shouldMirror.y then
-        mY = mirrorY
+        mY = (self.volSize.y - 1) - y
     end
     if self.shouldMirror.z then
-        mZ = mirrorZ
+        mZ = (self.volSize.z - 1) - z
     end
     if self.volume:get(mX, mY, mZ, BLOCK_NAME) == "Empty" 
     and self.toolMode == self.TOOL_REPLACE then 
         return 
     end
-    self.volume:set(mX, mY, mZ, ...) 
+    self:simpleSet(mX, mY, mZ, ...) 
     if self.shouldMirror.x and self.shouldMirror.y then
-        self.volume:set(x, mY, z, ...)
-        self.volume:set(mX, y, z, ...)
+        self:simpleSet(x, mY, z, ...)
+        self:simpleSet(mX, y, z, ...)
     end
     if self.shouldMirror.y and self.shouldMirror.z then
-        self.volume:set(x, mY, z, ...)
-        self.volume:set(x, y, mZ, ...)
+        self:simpleSet(x, mY, z, ...)
+        self:simpleSet(x, y, mZ, ...)
     end
     if self.shouldMirror.x and self.shouldMirror.z then
-        self.volume:set(mX, y, z, ...)
-        self.volume:set(x, y, mZ, ...)
+        self:simpleSet(mX, y, z, ...)
+        self:simpleSet(x, y, mZ, ...)
     end
     if self.shouldMirror.x and self.shouldMirror.y and self.shouldMirror.z then
-        self.volume:set(mX, mY, z, ...)
-        self.volume:set(mX, y, mZ, ...)
-        self.volume:set(x, mY, mZ, ...)
+        self:simpleSet(mX, mY, z, ...)
+        self:simpleSet(mX, y, mZ, ...)
+        self:simpleSet(x, mY, mZ, ...)
     end
 end
 
 
 function OmniTool:setAndMirror(x, y, z, ...)
-    self.volume:set(x, y, z, ...) 
+    self:simpleSet(x, y, z, ...) 
     self:mirroring(x, y, z, ...)                                                        
+end
+
+function OmniTool:simpleSet(x, y, z, ...)
+    self.volume:set(x, y, z, ...) 
 end
 
 
@@ -194,6 +187,7 @@ function OmniTool:applyLine(...)
 end
 
 function OmniTool:apply()
+    self.volSize.x, self.volSize.y, self.volSize.z = self.volume:size()
     if self.toolMode == self.TOOL_ADD or self.toolMode == self.TOOL_REPLACE then
         if self.toolType == self.TOOL_TYPE_POINT then
             self:applyPoints("name", "Solid", "color", self.toolColor)
