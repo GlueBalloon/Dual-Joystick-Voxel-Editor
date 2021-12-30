@@ -35,7 +35,7 @@ function setup()
     G.shelf:setColor(G.tool.toolColor)
     table.insert(G.tool.runAtColorChange, function(aColor) 
         G.shelf:setColor(aColor)
-        red, green, blue = aColor.r, aColor.g, aColor.b
+        hue, saturation, value = rgbToHsv(aColor.r, aColor.g, aColor.b)
         Color = aColor
     end)    
     --set up a traffic cop for touches
@@ -171,14 +171,64 @@ function addParameters()
     parameter.color("Color", G.shelf.color, function(c)
         G.tool.toolColor = c
     end)
-    parameter.number("red", 0, 255, G.tool.toolColor.r, function(c)
-        G.tool.toolColor = color(c, green, blue)
+    
+    function rgbToHsv(r, g, b, a)
+        r, g, b = r / 255, g / 255, b / 255
+        local max, min = math.max(r, g, b), math.min(r, g, b)
+        local h, s, v
+        v = max
+        
+        local d = max - min
+        if max == 0 then s = 0 else s = d / max end
+        
+        if max == min then
+            h = 0 -- achromatic
+        else
+            if max == r then
+                h = (g - b) / d
+                if g < b then h = h + 6 end
+            elseif max == g then h = (b - r) / d + 2
+            elseif max == b then h = (r - g) / d + 4
+            end
+            h = h / 6
+        end
+        
+        return h, s, v, a
+    end
+    
+    function hsvToRgb(h, s, v)
+        local r, g, b
+        
+        local i = math.floor(h * 6);
+        local f = h * 6 - i;
+        local p = v * (1 - s);
+        local q = v * (1 - f * s);
+        local t = v * (1 - (1 - f) * s);
+        
+        i = i % 6
+        
+        if i == 0 then r, g, b = v, t, p
+        elseif i == 1 then r, g, b = q, v, p
+        elseif i == 2 then r, g, b = p, v, t
+        elseif i == 3 then r, g, b = p, q, v
+        elseif i == 4 then r, g, b = t, p, v
+        elseif i == 5 then r, g, b = v, p, q
+        end
+        
+        return r * 255, g * 255, b * 255
+    end
+    
+    local col = G.tool.toolColor
+    local hsv = vec4(rgbToHsv(col.r, col.g, col.b, col.a))
+
+    parameter.number("hue", 0, 1, hsv.x, function(num)
+        G.tool.toolColor = color(hsvToRgb(num, saturation, value))
     end)
-    parameter.number("green", 0, 255, G.tool.toolColor.g, function(c)
-        G.tool.toolColor = color(red, c, blue)
+    parameter.number("saturation", 0, 1, hsv.y, function(num)
+        G.tool.toolColor = color(hsvToRgb(hue, num, value))
     end)
-    parameter.number("blue", 0, 255, G.tool.toolColor.b, function(c)
-        G.tool.toolColor = color(red, green, c)
+    parameter.number("value", 0, 1, hsv.z, function(num)
+        G.tool.toolColor = color(hsvToRgb(hue, saturation, num))
     end)
     
     
@@ -227,7 +277,7 @@ function update(dt)
     end
 
     if G.tool.shouldResize then
-        G.tool:resizeVolume(G.sizeX, G.sizeY, G.sizeZ)
+        G.tool:resizeVolume(GridSizeX, GridSizeY, GridSizeZ)
     end
     
     nudgeCheck()

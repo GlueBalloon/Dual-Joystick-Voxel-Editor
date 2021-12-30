@@ -18,6 +18,7 @@
 		<string>TouchesManager</string>
 		<string>VolumeTools</string>
 		<string>Utilities </string>
+		<string>HSVConverters</string>
 	</array>
 	<key>Created</key>
 	<string>2016-11-25 08:19:11 +0000</string>
