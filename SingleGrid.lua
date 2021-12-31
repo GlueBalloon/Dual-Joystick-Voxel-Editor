@@ -50,7 +50,7 @@ function SingleGrid:modified()
     background(217, 48, 177, 25)
     pushStyle()
    -- local gridColor = color(225, 175, 124, 186)
-     local gridColor = color(214, 25, 247, 186)
+     local gridColor = color(25, 198, 247, 186)
     stroke(gridColor)
     strokeWidth(5)
     noFill()
@@ -70,7 +70,9 @@ function SingleGrid:modified()
 
     popStyle()
     setContext()
-
+    
+    craft.texture(self.img):generateMipmaps()
+    
     local s = vec3()
     s[self.axes2[1]] = self.size[self.axes2[1]]
     s[self.axes2[2]] = self.size[self.axes2[2]]

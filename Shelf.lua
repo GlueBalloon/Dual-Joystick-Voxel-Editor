@@ -30,8 +30,8 @@ function Shelf:init(omniTool, volumeTools, standardizedUnit, buttonRadius, x, y,
     self.screenTopPanel.fill = color(233, 89, 80, 0)
     
     self.toolTypeButtons = {
-        self:makeRoundToolTypeButton("◾️", OmniTool.TOOL_TYPE_POINT, "editing touched blocks"),
-        self:makeRoundToolTypeButton("⬛️", OmniTool.TOOL_TYPE_BOX, "editing entire dragged area")
+        self:makeRoundToolTypeButton("◾️", OmniTool.TOOL_TYPE_POINT, "single-block mode"),
+        self:makeRoundToolTypeButton("⬛️", OmniTool.TOOL_TYPE_BOX, "area-drag mode")
     }
     --[[
     if self.tool.toolType == OmniTool.TOOL_TYPE_POINT then
@@ -105,7 +105,7 @@ function Shelf:init(omniTool, volumeTools, standardizedUnit, buttonRadius, x, y,
     {
         self:makeRoundToolButton("✏️", OmniTool.TOOL_ADD, "add blocks"),
         self:makeRoundToolButton("💣", OmniTool.TOOL_ERASE, "delete blocks"), 
-        self:makeRoundToolButton("💅🏻", OmniTool.TOOL_REPLACE, "change blocks' color"),
+        self:makeRoundToolButton("💅🏻", OmniTool.TOOL_REPLACE, "paint blocks"),
         self:makeRoundToolButton("💉", OmniTool.TOOL_GET, "get color")
     }, true)
     
@@ -136,12 +136,16 @@ function Shelf:init(omniTool, volumeTools, standardizedUnit, buttonRadius, x, y,
     "Have fun!"
     self.toolTipFontSize = fontSizeToFitRect(self.toolTip, 0, 0, WIDTH * 0.8, HEIGHT * 0.4)
     self.toolTipOpacity = 255
+    self.firstToolTipShowing = true
 end
 
 function Shelf:draw()
-    UI.Panel.draw(self)
+    UI.Panel.draw(self) 
    -- if CurrentTouch.state ~= 3 then print(CurrentTouch.state) end
     if self.toolTip ~= "" then
+        if self.idleButton.selected == false then
+            self.firstToolTipShowing = false
+        end
         if CurrentTouch.state == MOVING or self.toolTipOpacity < 254 then 
             self.fadeStarted = true 
         end
@@ -162,11 +166,14 @@ function Shelf:draw()
         popStyle()
         if self.fadeStarted then
             self.toolTipOpacity = self.toolTipOpacity - 10
-        else
+        elseif self.firstToolTipShowing == true then
             --sneakily use minor increments in toolTipOpacity as a counter
             self.toolTipOpacity = self.toolTipOpacity - 0.001
+        else
+            --fade out faster if this isn't the opening info
+            self.toolTipOpacity = self.toolTipOpacity - 0.015
         end
-            if self.toolTipOpacity <= 0 then 
+        if self.toolTipOpacity <= 0 then 
             self.toolTip = ""
             self.toolTipOpacity = 255
             self.fadeStarted = false

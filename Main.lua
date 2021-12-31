@@ -46,8 +46,10 @@ function setup()
     --export any demo models that need exporting    
     setUpSavedStates({
         "VE_Blank",
-        "VE_LittleFantasyDude",
         "VE_Frog",
+        "VE_LittleFantasyDude",
+        "VE_LittleKnight",
+        "VE_LittleSkelly",
         "VE_Bear",
         "VE_Castle",
         "VE_RoboDog",
@@ -63,6 +65,10 @@ function setup()
     textTime = DeltaTime
     fadeStarted = false
     ]]
+
+    copter = VoxelCopter(G.scene)
+    copter.copterModel.scale = vec3(0.1, 0.1, 0.1)
+    
 end
 
 function makeLegacyPlayer(globals)
@@ -315,5 +321,6 @@ function draw()
         if G.player.update then G.player.update() end
         if G.player.draw then G.player.draw() end
     end
+    copter:draw()
 end
 
