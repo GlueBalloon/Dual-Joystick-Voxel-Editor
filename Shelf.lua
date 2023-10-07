@@ -20,7 +20,7 @@ function Shelf:init(omniTool, volumeTools, standardizedUnit, buttonRadius, x, y,
     --make buttons that have to be accessed outside this class
     self:makeColorChooser()
     self.idleButton = self:makeRoundToolButton("🚁", OmniTool.TOOL_NONE, "flying mode")
-    self.idleButton.selected = true
+    self.idleButton.selected = false
     
     local topPanelWidth = self.buttonRadius * 6
     local buttonFrame = self.idleButton.frame
@@ -108,6 +108,7 @@ function Shelf:init(omniTool, volumeTools, standardizedUnit, buttonRadius, x, y,
         self:makeRoundToolButton("💅🏻", OmniTool.TOOL_REPLACE, "paint blocks"),
         self:makeRoundToolButton("💉", OmniTool.TOOL_GET, "get color")
     }, true)
+    self.toolsSection.children[1].selected = true
     
     local undoButton = self:roundButton("↩️", "undo")
     undoButton.action = function(b) 
