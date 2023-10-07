@@ -16,7 +16,46 @@ OmniTool.TOOL_TYPE_FLOOD = 4
 OmniTool.TOOL_STATE_IDLE = 1
 OmniTool.TOOL_STATE_DRAG = 2
 
+-- Define the gridWalls table outside of the raycast function
+OmniTool.gridWalls = {
+    front = "front",
+    back = "back",
+    top = "top",
+    bottom = "bottom",
+    left = "left",
+    right = "right"
+}
 
+function OmniTool:raycast(x,y,z)
+    -- ... rest of your code ...
+    
+    self.volume:raycast(origin, dir, 128, function(coord, id, face)
+        -- ... rest of your code ...
+        
+        -- Determine which grid wall has been touched
+        local gridWall = nil
+        if face == vec3(0, 0, 1) then
+            gridWall = self.gridWalls.front
+        elseif face == vec3(0, 0, -1) then
+            gridWall = self.gridWalls.back
+        elseif face == vec3(0, 1, 0) then
+            gridWall = self.gridWalls.top
+        elseif face == vec3(0, -1, 0) then
+            gridWall = self.gridWalls.bottom
+        elseif face == vec3(1, 0, 0) then
+            gridWall = self.gridWalls.left
+        elseif face == vec3(-1, 0, 0) then
+            gridWall = self.gridWalls.right
+        end
+        
+        -- Print or use the gridWall variable to see which grid wall was touched
+        print("Grid Wall Touched:", gridWall)
+        
+        -- ... rest of your code ...
+        return false
+    end)
+    return blockCoord, blockID, blockFace
+end
 
 function OmniTool:init(scene, volumeToAffect, grids, volumeTools, startColor, raycastCamera)
     self.raycastCamera = raycastCamera
@@ -29,7 +68,7 @@ function OmniTool:init(scene, volumeToAffect, grids, volumeTools, startColor, ra
     self.volume = volumeToAffect
     local sizeX, sizeY, sizeZ = self.volume:size()
     self.volSize = vec3(sizeX, sizeY, sizeZ)
-    self.toolMode = self.TOOL_NONE
+    self.toolMode = self.TOOL_ADD
     self.toolType = self.TOOL_TYPE_BOX
     self.toolColor = startColor
     self.shouldMirror = {x = false, y = false, z = false}
@@ -41,34 +80,15 @@ function OmniTool:touched(touch)
     if #vTools.snapshots > 0 then
         self.volume:loadSnapshot(vTools.snapshots[#vTools.snapshots])
     end
-
-    local coord, id, face = self:raycast(touch.x, touch.y, false)
-    local coordValid = (coord ~= nil)
     
-    --[[
-    if coordValid then
-        if self.toolMode == self.TOOL_ADD then
-            -- Determine the correct offset based on the grid being touched
-            local offset = face
-            -- Assuming self.volSize contains the dimensions of the volume
-            local nearMaxX = coord.x >= self.volSize.x - 1
-            local nearMaxY = coord.y >= self.volSize.y - 1
-            local nearMaxZ = coord.z >= self.volSize.z - 1
-            if nearMaxX or nearMaxY or nearMaxZ then
-                offset = -face
-            end
-            coord = coord + offset
-            print("Coord:", coord, "Face:", face, "Offset:", offset)
-        end   
-    end  
-    ]]
+    local coord, id, face = self:raycast(touch.x, touch.y, false)
     
     if coord then
         if self.toolMode == self.TOOL_ADD then
             coord = coord + face
         end   
     end  
-        
+    
     if self.toolMode == nil then
         return false
     end
@@ -94,7 +114,7 @@ function OmniTool:touched(touch)
         self.volumeTools:saveSnapshot()
         return true
     end
-
+    
     return false
 end
 
@@ -302,7 +322,7 @@ function OmniTool:raycast(x,y,z)
     return blockCoord, blockID, blockFace
 end
 
---[[
+
 function OmniTool:touched(touch)   
     local vTools = self.volumeTools
     local snapshotExists = (#vTools.snapshots > 0)
@@ -321,11 +341,16 @@ function OmniTool:touched(touch)
             local nearMaxX = coord.x >= self.volSize.x - 1
             local nearMaxY = coord.y >= self.volSize.y - 1
             local nearMaxZ = coord.z >= self.volSize.z - 1
+            -- Create a new vec3 with the absolute values of the face vector components
+            local absFace = vec3(math.abs(face.x), math.abs(face.y), math.abs(face.z))
+            -- Now use absFace instead of face when computing the offset
             if nearMaxX or nearMaxY or nearMaxZ then
-                offset = -face
+                offset = absFace  -- Now offset will have positive values
+            else
+                offset = face
             end
             coord = coord + offset
-            print("Coord:", coord, "Face:", face, "Offset:", offset)
+        --    print("Coord:", coord, "Face:", face, "Offset:", offset)
         end   
     end  
     
@@ -365,7 +390,7 @@ function OmniTool:touched(touch)
     
     return false
 end
-]]
+
 
 function OmniTool:raycast(x,y,z)
     local origin, dir = self.raycastCamera:screenToRay(vec2(x, y))
@@ -377,6 +402,8 @@ function OmniTool:raycast(x,y,z)
     local voxelTouched = false
     
     self.volume:raycast(origin, dir, 128, function(coord, id, face)
+        print("Origin:", origin, "Direction:", dir)
+        -- Example Output: Origin: vec3(0, 0, 0) Direction: vec3(1, 0, 0)
      --   print(coord, id, face)
         blockTouched = (id ~= nil and id ~= 0)
         if blockTouched then
@@ -397,10 +424,30 @@ function OmniTool:raycast(x,y,z)
                         local d = math.abs(v.normal:dot(coord + face - v.origin))
                         gridTouched = (d == 0)
                         if gridTouched then
-                            print("gridTouched!")
+                        --    print("gridTouched!")
                             blockID = 0
                             blockCoord = coord
                             blockFace = face  
+                            
+                            -- Determine which grid wall has been touched
+                            local gridWall = nil
+                            if face == vec3(0, 0, -1) then
+                                gridWall = self.gridWalls.back --works
+                            elseif face == vec3(1, 0, 0) then
+                                gridWall = self.gridWalls.left --works
+                            elseif face == vec3(0, -1, 0) then
+                                gridWall = self.gridWalls.bottom --works
+                            elseif face == vec3(0, 0, 1) then
+                                gridWall = self.gridWalls.front --unpredictable
+                            elseif face == vec3(0, 1, 0) then
+                                gridWall = self.gridWalls.right --unpredictable
+                            elseif face == vec3(-1, 0, 0) then
+                                gridWall = self.gridWalls.top --unpredictable
+                            end
+                            
+                            -- Print or use the gridWall variable to see which grid wall was touched
+                           -- print("Grid Wall Touched:", gridWall)
+                            
                             return true   
                         end
                     end
@@ -409,5 +456,5 @@ function OmniTool:raycast(x,y,z)
         end
         return false
     end)
-    return blockCoord, blockID, blockFace, blockTouched, gridTouched, voxelTouched
+    return blockCoord, blockID, blockFace, blockTouched, gridWall, voxelTouched
 end
