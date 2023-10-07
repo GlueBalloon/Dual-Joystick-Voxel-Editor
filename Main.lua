@@ -13,9 +13,9 @@ function setup()
 
     --set up scene
     G.scene = craft.scene()
-    viewer = G.scene.camera:add(OrbitViewer, vec3(0,0,0), 20, 1, 100)
-    viewer.rx = 45
-    viewer.ry = -45
+    viewer = G.scene.camera:add(OrbitViewer, vec3(0,0,0), 35, 1, 100)
+    viewer.rx = 10
+    viewer.ry = 0
     G.scene.ambientColor = color(255, 39)
     G.scene.sun.rotation = quat.eulerAngles(25, 125, 0)
     G.scene.physics.gravity = vec3(0,0,0)    
