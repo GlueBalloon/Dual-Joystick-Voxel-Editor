@@ -35,7 +35,8 @@ end
 -- Checks if the grid is visible based on where the camera is pointed
 function SingleGrid:isVisible()
     local camVec = self.viewPointSource.worldPosition - self.origin
-  return self.enabled and self.normal:dot(camVec) > 0.0
+    local visible = self.enabled and self.normal:dot(camVec) > 0.0
+    return visible
 end
 
 function SingleGrid:modified()

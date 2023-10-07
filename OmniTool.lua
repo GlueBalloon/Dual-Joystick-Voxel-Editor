@@ -43,6 +43,25 @@ function OmniTool:touched(touch)
     end
 
     local coord, id, face = self:raycast(touch.x, touch.y, false)
+    local coordValid = (coord ~= nil)
+    
+    --[[
+    if coordValid then
+        if self.toolMode == self.TOOL_ADD then
+            -- Determine the correct offset based on the grid being touched
+            local offset = face
+            -- Assuming self.volSize contains the dimensions of the volume
+            local nearMaxX = coord.x >= self.volSize.x - 1
+            local nearMaxY = coord.y >= self.volSize.y - 1
+            local nearMaxZ = coord.z >= self.volSize.z - 1
+            if nearMaxX or nearMaxY or nearMaxZ then
+                offset = -face
+            end
+            coord = coord + offset
+            print("Coord:", coord, "Face:", face, "Offset:", offset)
+        end   
+    end  
+    ]]
     
     if coord then
         if self.toolMode == self.TOOL_ADD then
@@ -252,7 +271,8 @@ function OmniTool:raycast(x,y,z)
     -- function which is given the coordinate, id and surface normal (face).
     -- Once true is returned, the raycast will stop
     self.volume:raycast(origin, dir, 128, function(coord, id, face)
-        if id and id ~= 0 then
+      --  print(coord, id, face)
+            if id and id ~= 0 then
             blockID = id
             blockCoord = coord
             blockFace = face
@@ -280,4 +300,114 @@ function OmniTool:raycast(x,y,z)
         return false
     end)
     return blockCoord, blockID, blockFace
+end
+
+--[[
+function OmniTool:touched(touch)   
+    local vTools = self.volumeTools
+    local snapshotExists = (#vTools.snapshots > 0)
+    if snapshotExists then
+        self.volume:loadSnapshot(vTools.snapshots[#vTools.snapshots])
+    end
+    
+    local coord, id, face = self:raycast(touch.x, touch.y, false)
+    local coordValid = (coord ~= nil)
+    
+    if coordValid then
+        if self.toolMode == self.TOOL_ADD then
+            -- Determine the correct offset based on the grid being touched
+            local offset = face
+            -- Assuming self.volSize contains the dimensions of the volume
+            local nearMaxX = coord.x >= self.volSize.x - 1
+            local nearMaxY = coord.y >= self.volSize.y - 1
+            local nearMaxZ = coord.z >= self.volSize.z - 1
+            if nearMaxX or nearMaxY or nearMaxZ then
+                offset = -face
+            end
+            coord = coord + offset
+            print("Coord:", coord, "Face:", face, "Offset:", offset)
+        end   
+    end  
+    
+    local toolModeValid = (self.toolMode ~= nil)
+    local touchBegan = (touch.state == BEGAN)
+    local touchMoving = (touch.state == MOVING)
+    local touchEnded = (touch.state == ENDED)
+    
+    local idleState = (self.state == self.TOOL_STATE_IDLE)
+    local dragState = (self.state == self.TOOL_STATE_DRAG)
+    
+    if not toolModeValid then
+        return false
+    end
+    
+    if coordValid and touchBegan and idleState then
+        self.startCoord = coord
+        self.endCoord = coord
+        self.state = self.TOOL_STATE_DRAG
+        self.points = {}
+        table.insert(self.points, coord)
+        self:apply()
+        return true
+    elseif touchMoving and dragState then
+        if coordValid then
+            self.endCoord = coord
+        end
+        table.insert(self.points, coord)
+        self:apply()
+        return true
+    elseif touchEnded and dragState then
+        self.state = self.TOOL_STATE_IDLE
+        self:apply()
+        self.volumeTools:saveSnapshot()
+        return true
+    end
+    
+    return false
+end
+]]
+
+function OmniTool:raycast(x,y,z)
+    local origin, dir = self.raycastCamera:screenToRay(vec2(x, y))
+    local blockID = nil
+    local blockCoord = nil
+    local blockFace = nil
+    local blockTouched = false
+    local gridTouched = false
+    local voxelTouched = false
+    
+    self.volume:raycast(origin, dir, 128, function(coord, id, face)
+     --   print(coord, id, face)
+        blockTouched = (id ~= nil and id ~= 0)
+        if blockTouched then
+            blockID = id
+            blockCoord = coord
+            blockFace = face
+            voxelTouched = true
+            return true
+        elseif id == nil then
+            local insideVolume = (coord.x >= -1 and coord.x <= self.volSize.x and 
+            coord.y >= -1 and coord.y <= self.volSize.y and
+            coord.z >= -1 and coord.z <= self.volSize.z)
+            
+            if insideVolume then
+                
+                for k,v in pairs(self.grids) do
+                    if v.enabled and v:isVisible() then
+                        local d = math.abs(v.normal:dot(coord + face - v.origin))
+                        gridTouched = (d == 0)
+                        if gridTouched then
+                            print("gridTouched!")
+                            blockID = 0
+                            blockCoord = coord
+                            blockFace = face  
+                            return true   
+                        end
+                    end
+                end
+            end
+        end
+        return false
+    end)
+    return blockCoord, blockID, blockFace, blockTouched, gridTouched, voxelTouched
 end

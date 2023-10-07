@@ -13,6 +13,9 @@ function setup()
 
     --set up scene
     G.scene = craft.scene()
+    viewer = G.scene.camera:add(OrbitViewer, vec3(0,0,0), 20, 1, 100)
+    viewer.rx = 45
+    viewer.ry = -45
     G.scene.ambientColor = color(255, 39)
     G.scene.sun.rotation = quat.eulerAngles(25, 125, 0)
     G.scene.physics.gravity = vec3(0,0,0)    
@@ -24,11 +27,11 @@ function setup()
     --make counter to keep nudges from happening too fast
     G.nudgeTimer = 0
     --make player
-    makePlayer(G)
+  --  makePlayer(G)
     --make grids
     makeGrids(G)    
     --set up voxel drawing tool
-    G.tool = OmniTool(G.scene, G.volume, G.grids, G.volumeTools, color(189, 205, 207), G.player.rig.joystickView.camera)
+    G.tool = OmniTool(G.scene, G.volume, G.grids, G.volumeTools, color(189, 205, 207), viewer.camera)
     G.tool.toolType = OmniTool.TOOL_TYPE_BOX
     --make toolbars
     G.shelf = Shelf(G.tool, G.volumeTools)
@@ -39,7 +42,7 @@ function setup()
         Color = aColor
     end)    
     --set up a traffic cop for touches
-    G.touchesManager = TouchesManager(G.player, G.tool, G.shelf)
+    G.touchesManager = TouchesManager(viewer, G.tool, G.shelf)
     touches.addHandler(G.touchesManager, -1, true)
     --create the controls in the overlay panel
     addParameters()
@@ -59,15 +62,15 @@ function setup()
     local nameToLoad = readProjectData("filename", "VE_Blank")
     G.volumeTools:loadFile(nameToLoad, {G.tool})
     GridSizeX, GridSizeY, GridSizeZ = G.volume:size()
-    
+
     --[[
     textOpacity = 255
     textTime = DeltaTime
     fadeStarted = false
     ]]
 
-    copter = VoxelCopter(G.scene)
-    copter.copterModel.scale = vec3(0.1, 0.1, 0.1)
+    --copter = VoxelCopter(G.scene)
+   -- copter.copterModel.scale = vec3(0.1, 0.1, 0.1)
     
 end
 
@@ -118,15 +121,15 @@ end
 
 function makeGrids(globals)
     local G = globals
-    local camThing = G.player.rig.joystickView
+   -- local camThing = G.player.rig.joystickView
     G.grids = 
     {
-        bottom = SingleGrid(G.scene, camThing, vec3(0,1,0), vec3(0,0,0), 1, vec3(G.sizeX,G.sizeY,G.sizeZ), true),
-        top = SingleGrid(G.scene, camThing, vec3(0,-1,0), vec3(0,G.sizeY,0), 1, vec3(G.sizeX,G.sizeY,G.sizeZ), true),
-        left = SingleGrid(G.scene, camThing, vec3(1,0,0), vec3(0,0,0), 1, vec3(G.sizeX,G.sizeY,G.sizeZ), true),
-        right = SingleGrid(G.scene, camThing, vec3(-1,0,0), vec3(G.sizeX,0,0), 1, vec3(G.sizeX,G.sizeY,G.sizeZ), true),
-        front = SingleGrid(G.scene, camThing, vec3(0,0,1), vec3(0,0,0), 1, vec3(G.sizeX,G.sizeY,G.sizeZ), true),
-        back = SingleGrid(G.scene, camThing, vec3(0,0,-1), vec3(0,0,G.sizeZ), 1, vec3(G.sizeX,G.sizeY,G.sizeZ), true) 
+bottom = SingleGrid(G.scene, viewer.entity, vec3(0,1,0), vec3(0,0,0), 1, vec3(G.sizeX,G.sizeY,G.sizeZ), true),
+        top = SingleGrid(G.scene, viewer.entity, vec3(0,-1,0), vec3(0,G.sizeY,0), 1, vec3(G.sizeX,G.sizeY,G.sizeZ), true),
+        left = SingleGrid(G.scene, viewer.entity, vec3(1,0,0), vec3(0,0,0), 1, vec3(G.sizeX,G.sizeY,G.sizeZ), true),
+        right = SingleGrid(G.scene, viewer.entity, vec3(-1,0,0), vec3(G.sizeX,0,0), 1, vec3(G.sizeX,G.sizeY,G.sizeZ), true),
+        front = SingleGrid(G.scene, viewer.entity, vec3(0,0,1), vec3(0,0,0), 1, vec3(G.sizeX,G.sizeY,G.sizeZ), true),
+        back = SingleGrid(G.scene, viewer.entity, vec3(0,0,-1), vec3(0,0,G.sizeZ), 1, vec3(G.sizeX,G.sizeY,G.sizeZ), true) 
     }
 end
 
@@ -314,6 +317,7 @@ function draw()
     G.shelf.screenTopPanel:update()
     G.shelf.screenTopPanel:draw()
     
+    --[[
     if G.player.isLegacy then
         G.player:update()
         G.player:draw() 
@@ -321,6 +325,16 @@ function draw()
         if G.player.update then G.player.update() end
         if G.player.draw then G.player.draw() end
     end
-    copter:draw()
+    ]]
+   -- copter:draw()
 end
+
+
+
+--function touched(touch)
+    --G.touchesManager:touched(touch)
+    --if G.touchesManager.tool.toolMode == OmniTool.TOOL_NONE then
+      --  touches.touched(touch)
+    --end 
+--end
 

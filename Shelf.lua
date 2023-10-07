@@ -126,6 +126,7 @@ function Shelf:init(omniTool, volumeTools, standardizedUnit, buttonRadius, x, y,
     self:layoutVertical(paddingBetweenSections, false)
     self.frame.y = self.frame.y + paddingBetweenSections --hiding padding at top
     
+    --not relevant any more:
     self.toolTip = "This is an immersive voxel editor,\n"..
     "with two-joystick movement controls\n"..
     "like a mobile game.\n\n"..
@@ -135,6 +136,7 @@ function Shelf:init(omniTool, volumeTools, standardizedUnit, buttonRadius, x, y,
     " movement and editing.\n"..
     "Have fun!"
     self.toolTipFontSize = fontSizeToFitRect(self.toolTip, 0, 0, WIDTH * 0.8, HEIGHT * 0.4)
+    self.toolTip = ""
     self.toolTipOpacity = 255
     self.firstToolTipShowing = true
 end
@@ -268,6 +270,7 @@ function Shelf:makeRoundToolButton(iconChar, mode, toolTipText)
     local toolButton = self:roundButton(iconChar, toolTipText)  
     toolButton.mode = mode
     toolButton.action = function(b) 
+        
         for k,v in pairs(self.toolsSection.children) do
             if v ~= toolButton then
                 v.selected = false
