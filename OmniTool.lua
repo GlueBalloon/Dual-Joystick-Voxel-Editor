@@ -365,88 +365,6 @@ function OmniTool:touched(touch)
     return false
 end
 
-
---[[
-function OmniTool:raycast(x,y,z)
-    local origin, dir = self.raycastCamera:screenToRay(vec2(x, y))
-    -- print("Origin:", origin, "Direction:", dir)
-    -- Example Output: Origin: vec3(0, 0, 0) Direction: vec3(1, 0, 0)
-    local idValueNotUsed = nil
-    local blockCoord = nil
-    local blockFace = nil
-    local blockTouched = false
-    local gridTouched = false
-    local voxelTouched = false
-    local raycastCallbackFunction = function(coord, id, face)
-
-        for k,v in pairs(self.grids) do
-            if v.enabled and v:isVisible() then
-                local d = math.abs(v.normal:dot(coord + face - v.origin))
-                gridTouched = (d == 0)
-                if gridTouched then
-                    print("Coord:", coord, " ID:", id, " Face:", face)
-                    --Example Output: Coord: vec3(5, 5, 5) ID: 1 Face: vec3(0, 1, 0)
-                end
-            end
-        end
-        
-        blockTouched = (id ~= nil and id ~= 0)
-        if blockTouched then
-            idValueReturnedButNotUsed = id
-            blockCoord = coord
-            blockFace = face
-            voxelTouched = true
-            return true
-        elseif id == nil then
-            local insideVolume = (coord.x >= -1 and coord.x <= self.volSize.x and 
-            coord.y >= -1 and coord.y <= self.volSize.y and
-            coord.z >= -1 and coord.z <= self.volSize.z)
-            
-            if insideVolume then
-                
-                for k,v in pairs(self.grids) do
-                    if v.enabled and v:isVisible() then
-                        local d = math.abs(v.normal:dot(coord + face - v.origin))
-                        gridTouched = (d == 0)
-                        if gridTouched then
-                            --    print("gridTouched!")
-                            idValueReturnedButNotUsed = 0
-                            blockCoord = coord
-                            blockFace = face  
-                            
-                            -- Determine which grid wall has been touched
-                            local gridWall = nil
-                            if face == vec3(0, 0, -1) then
-                                gridWall = self.gridWalls.front --unpredictable
-                            elseif face == vec3(0, 0, 1) then
-                                gridWall = self.gridWalls.back --works
-                            elseif face == vec3(1, 0, 0) then
-                                gridWall = self.gridWalls.right --works
-                            elseif face == vec3(-1, 0, 0) then
-                                gridWall = self.gridWalls.left --unpredictable
-                            elseif face == vec3(0, -1, 0) then
-                                gridWall = self.gridWalls.top --unpredictable
-                            elseif face == vec3(0, 1, 0) then
-                                gridWall = self.gridWalls.bottom --works
-                            end
-                            
-                            -- Print or use the gridWall variable to see which grid wall was touched
-                            print("Grid Wall Touched:", gridWall)
-                            
-                            return true   
-                        end
-                    end
-                end
-            end
-        end
-        return false
-    end
-    
-    self.volume:raycast(origin, dir, 128, raycastCallbackFunction)
-    return blockCoord, idValueReturnedButNotUsed, blockFace, blockTouched, gridWall, voxelTouched
-end
-]]
-
 function OmniTool:raycast(x,y,z)
     -- Convert screen coordinates to a ray origin and direction
     local origin, dir = self.raycastCamera:screenToRay(vec2(x, y))
@@ -461,20 +379,6 @@ function OmniTool:raycast(x,y,z)
     
     -- Define the callback function to be used in raycasting
     local raycastCallback = function(coord, idInCallback, face)
-        -- Check each grid to see if it's enabled, visible and touched by the ray
-        --[[
-        for k, v in pairs(self.grids) do
-            if v.enabled and v:isVisible() then
-                -- Determine if the ray touches the grid
-                local d = math.abs(v.normal:dot(coord + face - v.origin))
-                gridTouched = (d == 0)
-                if gridTouched then
-                    -- Output the coordinates, ID and face vector if a grid is touched
-                    print("Coord:", coord, " ID:", idInCallback, " Face:", face)
-                end
-            end
-        end
-        ]]
         
         -- Check if a block is touched by the ray
         blockTouched = (idInCallback ~= nil and idInCallback ~= 0)
@@ -504,26 +408,6 @@ function OmniTool:raycast(x,y,z)
                             unusedReturnID = 0
                             blockCoord = coord
                             blockFace = face  
-                            --[[
-                            -- Determine which grid wall has been touched
-                            local gridWall = nil
-                            if face == vec3(0, 0, -1) then
-                                gridWall = self.gridWalls.front --unpredictable
-                            elseif face == vec3(0, 0, 1) then
-                                gridWall = self.gridWalls.back --works
-                            elseif face == vec3(1, 0, 0) then
-                                gridWall = self.gridWalls.right --works
-                            elseif face == vec3(-1, 0, 0) then
-                                gridWall = self.gridWalls.left --unpredictable
-                            elseif face == vec3(0, -1, 0) then
-                                gridWall = self.gridWalls.top --unpredictable
-                            elseif face == vec3(0, 1, 0) then
-                                gridWall = self.gridWalls.bottom --works
-                            end
-                            
-                            -- Output the grid wall touched
-                            print("Grid Wall Touched:", gridWall)
-                            ]]
                             return true  -- Stop raycasting once a grid is touched
                         end
                     end

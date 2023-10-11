@@ -31,7 +31,7 @@ function setup()
     --make grids
     makeGrids(G)    
     --set up voxel drawing tool
-    G.tool = OmniTool(G.scene, G.volume, G.grids, G.volumeTools, color(189, 205, 207), viewer.camera)
+    G.tool = OmniTool(G.scene, G.volume, G.grids, G.volumeTools, color(140,155,223), viewer.camera)
     G.tool.toolType = OmniTool.TOOL_TYPE_BOX
     --make toolbars
     G.shelf = Shelf(G.tool, G.volumeTools)
