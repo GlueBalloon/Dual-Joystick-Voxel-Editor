@@ -303,7 +303,7 @@ function OmniTool:touched(touch)
     
     --renaming original code for clarity:
     --local coord, id, face = self:raycast(touch.x, touch.y, false)
-    local volumePosition, id, face = self:raycast(touch.x, touch.y, false)
+    local volumePosition, idValueNotUsed, face = self:raycast(touch.x, touch.y, false)
     --local coordValid = (volumePosition ~= nil)
     local volumePositionValid = (volumePosition ~= nil)
     
@@ -366,18 +366,18 @@ function OmniTool:touched(touch)
 end
 
 
+--[[
 function OmniTool:raycast(x,y,z)
     local origin, dir = self.raycastCamera:screenToRay(vec2(x, y))
     -- print("Origin:", origin, "Direction:", dir)
     -- Example Output: Origin: vec3(0, 0, 0) Direction: vec3(1, 0, 0)
-    local blockID = nil
+    local idValueNotUsed = nil
     local blockCoord = nil
     local blockFace = nil
     local blockTouched = false
     local gridTouched = false
     local voxelTouched = false
-    
-    self.volume:raycast(origin, dir, 128, function(coord, id, face)
+    local raycastCallbackFunction = function(coord, id, face)
 
         for k,v in pairs(self.grids) do
             if v.enabled and v:isVisible() then
@@ -389,10 +389,10 @@ function OmniTool:raycast(x,y,z)
                 end
             end
         end
-
+        
         blockTouched = (id ~= nil and id ~= 0)
         if blockTouched then
-            blockID = id
+            idValueReturnedButNotUsed = id
             blockCoord = coord
             blockFace = face
             voxelTouched = true
@@ -409,8 +409,8 @@ function OmniTool:raycast(x,y,z)
                         local d = math.abs(v.normal:dot(coord + face - v.origin))
                         gridTouched = (d == 0)
                         if gridTouched then
-                        --    print("gridTouched!")
-                            blockID = 0
+                            --    print("gridTouched!")
+                            idValueReturnedButNotUsed = 0
                             blockCoord = coord
                             blockFace = face  
                             
@@ -440,6 +440,104 @@ function OmniTool:raycast(x,y,z)
             end
         end
         return false
-    end)
-    return blockCoord, blockID, blockFace, blockTouched, gridWall, voxelTouched
+    end
+    
+    self.volume:raycast(origin, dir, 128, raycastCallbackFunction)
+    return blockCoord, idValueReturnedButNotUsed, blockFace, blockTouched, gridWall, voxelTouched
+end
+]]
+
+function OmniTool:raycast(x,y,z)
+    -- Convert screen coordinates to a ray origin and direction
+    local origin, dir = self.raycastCamera:screenToRay(vec2(x, y))
+    
+    -- Initialize variables to hold raycast results
+    local unusedReturnID = nil
+    local blockCoord = nil
+    local blockFace = nil
+    local blockTouched = false
+    local gridTouched = false
+    local voxelTouched = false
+    
+    -- Define the callback function to be used in raycasting
+    local raycastCallback = function(coord, idInCallback, face)
+        -- Check each grid to see if it's enabled, visible and touched by the ray
+        --[[
+        for k, v in pairs(self.grids) do
+            if v.enabled and v:isVisible() then
+                -- Determine if the ray touches the grid
+                local d = math.abs(v.normal:dot(coord + face - v.origin))
+                gridTouched = (d == 0)
+                if gridTouched then
+                    -- Output the coordinates, ID and face vector if a grid is touched
+                    print("Coord:", coord, " ID:", idInCallback, " Face:", face)
+                end
+            end
+        end
+        ]]
+        
+        -- Check if a block is touched by the ray
+        blockTouched = (idInCallback ~= nil and idInCallback ~= 0)
+        if blockTouched then
+            -- Set the block information if a block is touched
+            unusedReturnID = idInCallback
+            blockCoord = coord
+            blockFace = face
+            voxelTouched = true
+            return true  -- Stop raycasting once a block is touched
+       elseif idInCallback == nil then
+            -- Check if the ray is within the volume bounds
+            local insideVolume = (coord.x >= -1 and coord.x <= self.volSize.x and 
+            coord.y >= -1 and coord.y <= self.volSize.y and
+            coord.z >= -1 and coord.z <= self.volSize.z)
+            
+
+            if insideVolume then
+                -- Again check each grid to see if it's enabled, visible, and touched by the ray
+                for k, v in pairs(self.grids) do
+                    if v.enabled and v:isVisible() then
+                        local d = math.abs(v.normal:dot(coord + face - v.origin))
+                        gridTouched = (d == 0)
+                        if gridTouched then
+
+                            -- Set the block information if a grid is touched
+                            unusedReturnID = 0
+                            blockCoord = coord
+                            blockFace = face  
+                            --[[
+                            -- Determine which grid wall has been touched
+                            local gridWall = nil
+                            if face == vec3(0, 0, -1) then
+                                gridWall = self.gridWalls.front --unpredictable
+                            elseif face == vec3(0, 0, 1) then
+                                gridWall = self.gridWalls.back --works
+                            elseif face == vec3(1, 0, 0) then
+                                gridWall = self.gridWalls.right --works
+                            elseif face == vec3(-1, 0, 0) then
+                                gridWall = self.gridWalls.left --unpredictable
+                            elseif face == vec3(0, -1, 0) then
+                                gridWall = self.gridWalls.top --unpredictable
+                            elseif face == vec3(0, 1, 0) then
+                                gridWall = self.gridWalls.bottom --works
+                            end
+                            
+                            -- Output the grid wall touched
+                            print("Grid Wall Touched:", gridWall)
+                            ]]
+                            return true  -- Stop raycasting once a grid is touched
+                        end
+                    end
+                end
+            end
+            end
+        return false  -- Continue raycasting if nothing is touched yet
+    end
+    
+    -- Perform the raycasting with the defined callback function
+    self.volume:raycast(origin, dir, 128, raycastCallback)
+    
+    -- Return the raycasting results
+    --used to be:
+    --    return blockCoord, idValueReturnedButNotUsed, blockFace, blockTouched, gridWall, voxelTouched
+    return blockCoord, unusedReturnID, blockFace
 end
