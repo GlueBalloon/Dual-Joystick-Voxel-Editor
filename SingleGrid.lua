@@ -10,11 +10,11 @@ function SingleGrid:init(scene, viewPointSource, normal, origin, spacing, size, 
     self.size = size
     self.axes = {vec3(), vec3()}
     self.enabled = enabled
-
+    
     if self.normal.x ~= 0 then
         self.axes[1].y = 1
         self.axes[2].z = 1
-        self.axes2 = {3, 2, 1}
+        self.axes2 = {3, 2, 1} 
     elseif self.normal.y ~= 0 then
         self.axes[1].x = 1
         self.axes[2].z = 1
@@ -22,9 +22,26 @@ function SingleGrid:init(scene, viewPointSource, normal, origin, spacing, size, 
     elseif self.normal.z ~= 0 then
         self.axes[1].x = 1
         self.axes[2].y = 1
-        self.axes2 = {1, 2, 3}
+        self.axes2 = {1, 2, 3}  -- the values are the same for both positive and negative z
     end
-
+    
+    if false then
+        if self.normal.x ~= 0 then
+            self.axes[1].y = 1
+            self.axes[2].z = 1
+            self.axes2 = self.normal.x > 0 and {3, 2, 1} or {3, 1, 2}
+        elseif self.normal.y ~= 0 then
+            self.axes[1].x = 1
+            self.axes[2].z = 1
+            self.axes2 = self.normal.y > 0 and {1, 3, 2} or {2, 3, 1}
+        elseif self.normal.z ~= 0 then
+            self.axes[1].x = 1
+            self.axes[2].y = 1
+            self.axes2 = self.normal.z > 0 and {1, 2, 3} or {1, 2, 3}  -- the values are the same for both positive and negative z
+        end
+    end 
+    
+    
     self.entity = self.scene:entity()
     self.r = self.entity:add(craft.renderer, craft.model.cube(vec3(1,1,1), vec3(0.5,0.5,0.5)))
     self.r.material = craft.material(asset.builtin.Materials.Specular)
@@ -78,9 +95,21 @@ function SingleGrid:modified()
     s[self.axes2[1]] = self.size[self.axes2[1]]
     s[self.axes2[2]] = self.size[self.axes2[2]]
     self.entity.scale = s
-    local p = vec3()
-    p[self.axes2[3]] = self.origin[self.axes2[3]]
+    local p = self.origin + self.normal * (self.size / 2)  -- Assume self.size is a vec3
     self.entity.position = p
+    if false then
+        local p = vec3()
+        p[self.axes2[3]] = self.origin[self.axes2[3]]
+        if (self.normal.x > 0 and self.axes2[3] == 1) then 
+            -- adjust position based on normal
+            p = p + self.normal * self.size.y
+        end 
+        if (self.normal.y > 0 and self.axes2[3] == 2) then
+            p = p + self.normal * self.size.x
+        end
+        self.entity.position = p
+    end 
+
 end
 
 function SingleGrid:update()

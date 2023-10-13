@@ -248,51 +248,6 @@ function OmniTool:resizeVolume(sizeX, sizeY, sizeZ)
     end
 end
 
--- Helper function for voxel raycasts
---[[
-function OmniTool:raycast(x,y,z)
-    local origin, dir = self.raycastCamera:screenToRay(vec2(x, y))
-    local blockID = nil
-    local blockCoord = nil
-    local blockFace = nil
-    
-    -- The raycast function will go through all voxels in a line starting at a given origin
-    -- heading in the specified direction. The traversed voxels are passed to a callback
-    -- function which is given the coordinate, id and surface normal (face).
-    -- Once true is returned, the raycast will stop
-    self.volume:raycast(origin, dir, 128, function(coord, id, face)
-      --  print(coord, id, face)
-            if id and id ~= 0 then
-            blockID = id
-            blockCoord = coord
-            blockFace = face
-            return true
-        elseif id == nil then
-            
-            if coord.x >= -1 and coord.x <= self.volSize.x and 
-            coord.y >= -1 and coord.y <= self.volSize.y and
-            coord.z >= -1 and coord.z <= self.volSize.z then
-                
-                for k,v in pairs(self.grids) do
-                    if v.enabled and v:isVisible() then
-                        local d = math.abs(v.normal:dot(coord + face - v.origin))
-                        if d == 0 then
-                            blockID = 0
-                            blockCoord = coord
-                            blockFace = face  
-                            return true   
-                        end
-                    end
-                end
-            end
-            
-        end
-        return false
-    end)
-    return blockCoord, blockID, blockFace
-end
-]]
-
 
 function OmniTool:touched(touch)   
     local vTools = self.volumeTools
@@ -374,14 +329,17 @@ function OmniTool:raycast(x,y,z)
     local blockCoord = nil
     local blockFace = nil
     local blockTouched = false
+    local maybeGridTouched = false
     local gridTouched = false
     local voxelTouched = false
     
-    -- Define the callback function to be used in raycasting
-    local raycastCallback = function(coord, idInCallback, face)
+    -- callback for everything touched by raycast until "true" returned
+    local grabDetailsIfBlockOrGridTouched = function(coord, idInCallback, face)
         
-        -- Check if a block is touched by the ray
+        -- Check what has been touched by the ray
         blockTouched = (idInCallback ~= nil and idInCallback ~= 0)
+        maybeGridTouched = (not blockTouched) and idInCallback == nil
+        
         if blockTouched then
             -- Set the block information if a block is touched
             unusedReturnID = idInCallback
@@ -389,22 +347,22 @@ function OmniTool:raycast(x,y,z)
             blockFace = face
             voxelTouched = true
             return true  -- Stop raycasting once a block is touched
-       elseif idInCallback == nil then
+            
+        elseif maybeGridTouched then
             -- Check if the ray is within the volume bounds
-            local insideVolume = (coord.x >= -1 and coord.x <= self.volSize.x and 
+            local coordInVolume = (coord.x >= -1 and coord.x <= self.volSize.x and 
             coord.y >= -1 and coord.y <= self.volSize.y and
             coord.z >= -1 and coord.z <= self.volSize.z)
             
-
-            if insideVolume then
-                -- Again check each grid to see if it's enabled, visible, and touched by the ray
+            if coordInVolume then
+                -- check each grid 
                 for k, v in pairs(self.grids) do
+                    --check if visible
                     if v.enabled and v:isVisible() then
                         local d = math.abs(v.normal:dot(coord + face - v.origin))
                         gridTouched = (d == 0)
+                        -- set block information if a grid is touched
                         if gridTouched then
-
-                            -- Set the block information if a grid is touched
                             unusedReturnID = 0
                             blockCoord = coord
                             blockFace = face  
@@ -413,14 +371,14 @@ function OmniTool:raycast(x,y,z)
                     end
                 end
             end
-            end
-        return false  -- Continue raycasting if nothing is touched yet
+        end
+        return false  -- Continue raycasting if neither grid nor block touched yet
     end
     
-    -- Perform the raycasting with the defined callback function
-    self.volume:raycast(origin, dir, 128, raycastCallback)
+    -- Perform raycasting with the defined callback
+    self.volume:raycast(origin, dir, 128, grabDetailsIfBlockOrGridTouched)
     
-    -- Return the raycasting results
+    -- Return raycasting results
     --used to be:
     --    return blockCoord, idValueReturnedButNotUsed, blockFace, blockTouched, gridWall, voxelTouched
     return blockCoord, unusedReturnID, blockFace
