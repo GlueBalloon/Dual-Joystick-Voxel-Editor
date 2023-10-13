@@ -95,20 +95,9 @@ function SingleGrid:modified()
     s[self.axes2[1]] = self.size[self.axes2[1]]
     s[self.axes2[2]] = self.size[self.axes2[2]]
     self.entity.scale = s
-    local p = self.origin + self.normal * (self.size / 2)  -- Assume self.size is a vec3
+    local p = vec3()
+    p[self.axes2[3]] = self.origin[self.axes2[3]]
     self.entity.position = p
-    if false then
-        local p = vec3()
-        p[self.axes2[3]] = self.origin[self.axes2[3]]
-        if (self.normal.x > 0 and self.axes2[3] == 1) then 
-            -- adjust position based on normal
-            p = p + self.normal * self.size.y
-        end 
-        if (self.normal.y > 0 and self.axes2[3] == 2) then
-            p = p + self.normal * self.size.x
-        end
-        self.entity.position = p
-    end 
 
 end
 

@@ -262,6 +262,7 @@ function OmniTool:touched(touch)
     --local coordValid = (volumePosition ~= nil)
     local volumePositionValid = (volumePosition ~= nil)
     
+
     if volumePositionValid then
         if self.toolMode == self.TOOL_ADD then
             -- Determine the correct offset based on the grid being touched
@@ -272,6 +273,7 @@ function OmniTool:touched(touch)
             local nearMaxZ = volumePosition.z >= self.volSize.z - 1
             -- Create a new vec3 with the absolute values of the face vector components
             local absFace = vec3(math.abs(face.x), math.abs(face.y), math.abs(face.z))
+            
             -- Now use absFace instead of face when computing the offset
             if nearMaxX or nearMaxY or nearMaxZ then
                 offset = absFace  -- Now offset will have positive values
@@ -279,9 +281,38 @@ function OmniTool:touched(touch)
                 offset = face
             end
             volumePosition = volumePosition + offset
-        --    print("Coord:", coord, "Face:", face, "Offset:", offset)
-        end   
-    end  
+            print("Before grid check: ", volumePosition)
+            -- Map of grid name to the component that should be adjusted and the direction of adjustment.
+            local adjustmentMap = {
+                top = {component = 'y', direction = -1},
+                bottom = {component = 'y', direction = 1},
+                left = {component = 'x', direction = 1},
+                right = {component = 'x', direction = -1},
+                front = {component = 'z', direction = 1},
+                back = {component = 'z', direction = -1}
+            }
+            
+
+            for gridName, grid in pairs(self.grids) do
+                if grid:isVisible() then
+                    local adjustment = adjustmentMap[gridName]
+                    if adjustment then
+                        local axisSize = self.volSize[adjustment.component]
+                        local coordValue = volumePosition[adjustment.component]
+                        
+                        -- Adjust the coordinate if it's out of bounds.
+                        if coordValue == -1 then
+                            volumePosition[adjustment.component] = 0
+                        elseif coordValue == axisSize then
+                            volumePosition[adjustment.component] = axisSize - 1
+                        end
+                    end
+                end
+            end
+            print("Adjusted if grid: ", volumePosition)
+        end
+    end
+
     
     local toolModeValid = (self.toolMode ~= nil)
     local touchBegan = (touch.state == BEGAN)
