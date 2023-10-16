@@ -261,7 +261,7 @@ function OmniTool:touched(touch)
     local volumePosition, idValueNotUsed, face = self:raycast(touch.x, touch.y, false)
     --local coordValid = (volumePosition ~= nil)
     local volumePositionValid = (volumePosition ~= nil)
-    
+   -- if not volumePositionValid then print("not a valid volume position") end
 
     if volumePositionValid then
         if self.toolMode == self.TOOL_ADD then
@@ -281,7 +281,7 @@ function OmniTool:touched(touch)
                 offset = face
             end
             volumePosition = volumePosition + offset
-            print("Before grid check: ", volumePosition)
+          --  print("Before grid check: ", volumePosition)
             -- Map of grid name to the component that should be adjusted and the direction of adjustment.
             local adjustmentMap = {
                 top = {component = 'y', direction = -1},
@@ -309,7 +309,7 @@ function OmniTool:touched(touch)
                     end
                 end
             end
-            print("Adjusted if grid: ", volumePosition)
+           -- print("Adjusted if grid: ", volumePosition)
         end
     end
 
@@ -354,7 +354,7 @@ end
 function OmniTool:raycast(x,y,z)
     -- Convert screen coordinates to a ray origin and direction
     local origin, dir = self.raycastCamera:screenToRay(vec2(x, y))
-    
+--  print("x, y: ", x, " ", y)  -- Add this line before raycasting
     -- Initialize variables to hold raycast results
     local unusedReturnID = nil
     local blockCoord = nil
@@ -390,7 +390,9 @@ function OmniTool:raycast(x,y,z)
                 for k, v in pairs(self.grids) do
                     --check if visible
                     if v.enabled and v:isVisible() then
-                        local d = math.abs(v.normal:dot(coord + face - v.origin))
+                        local vector = coord + face - v.origin
+                        local d = math.abs(v.normal:dot(vector))
+                     --   print("Dot product:", d, "Normal:", v.normal, "Vector:", vector)  -- Debug print statement
                         gridTouched = (d == 0)
                         -- set block information if a grid is touched
                         if gridTouched then
@@ -407,8 +409,9 @@ function OmniTool:raycast(x,y,z)
     end
     
     -- Perform raycasting with the defined callback
+  --  print("Ray Origin:", origin, "Ray Direction:", dir)  -- Add this line before raycasting
     self.volume:raycast(origin, dir, 128, grabDetailsIfBlockOrGridTouched)
-    
+  --  print("Raycast Output:", blockCoord, unusedReturnID, blockFace)  -- Add this line after raycasting
     -- Return raycasting results
     --used to be:
     --    return blockCoord, idValueReturnedButNotUsed, blockFace, blockTouched, gridWall, voxelTouched
