@@ -13,10 +13,9 @@ function setup()
 
     --set up scene
     G.scene = craft.scene()
-    viewer = G.scene.camera:add(OrbitViewer, vec3(0,0,0), 30, 1, 100)
-    viewer.rx = 10
-    viewer.ry = -135
-    viewer.ry = 0
+    viewer = G.scene.camera:add(OrbitViewer, vec3(0,0,0), 29, 1, 100)
+    viewer.rx = 13
+    viewer.ry = -108
     G.scene.ambientColor = color(255, 39)
     G.scene.sun.rotation = quat.eulerAngles(25, 125, 0)
     G.scene.physics.gravity = vec3(0,0,0)    
@@ -60,7 +59,7 @@ function setup()
         "VE_Car",
     })
     --load last saved model or default model
-    local nameToLoad = readProjectData("filename", "VE_Blank")
+    local nameToLoad = readProjectData("filename", "VE_LittleFantasyDude")
     G.volumeTools:loadFile(nameToLoad, {G.tool})
     GridSizeX, GridSizeY, GridSizeZ = G.volume:size()
 
@@ -173,7 +172,7 @@ function setUpSavedStates(saveFileNames)
     for i=2, #saveFileNames do
         saves = saves..saveFileNames[i].."\n\t"
     end
-    print("To clear everything load the file VE_Blank.\n\nAlso try loading these examples:\n\n"..saves)
+    print("Scroll through parameters above for other features. Load these filenames to see fun examples:\n\n"..saves)
 end
 
 function addParameters()
@@ -260,7 +259,9 @@ function addParameters()
     parameter.integer("nudgeY", -1, 1, 0)
     parameter.integer("nudgeZ", -1, 1, 0)
     
-    parameter.action("Clear All", function() G.volumeTools:clear() end)
+    parameter.action("Clear and Reset", function() 
+        G.volumeTools:loadFile("Documents:VE_Blank", {G.tool})
+    end)
     
     parameter.integer("GridSizeX", 5, 50, 20, function(s)
         G.sizeX = s
