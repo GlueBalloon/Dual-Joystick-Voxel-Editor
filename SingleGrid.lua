@@ -68,7 +68,11 @@ function SingleGrid:modified()
     background(217, 48, 177, 25)
     pushStyle()
    -- local gridColor = color(225, 175, 124, 186)
-     local gridColor = color(25, 198, 247, 186)
+    if self.normal.x == -1 or self.normal.y == -1 or self.normal.z == -1 then
+        gridColor = color(168, 39, 106, 186) 
+    else
+        gridColor = color(25, 198, 247, 186) 
+    end
     stroke(gridColor)
     strokeWidth(5)
     noFill()
