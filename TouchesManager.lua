@@ -7,7 +7,6 @@ function TouchesManager:init(player, omniTool, shelf)
 end
 
 function TouchesManager:touched(touch)
-    
     -- Always check for touches on the shelf, regardless of the toolMode
     local shelfTapped = self.shelf:hitTest(touch.x, touch.y) or self.shelf.screenTopPanel:hitTest(touch.x, touch.y)
     if shelfTapped then

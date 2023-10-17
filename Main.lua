@@ -6,16 +6,19 @@
 -----------------------------------------
 
 viewer.mode = OVERLAY
-
+--todo: fix blocks not stacking on red walls
+--    : make a warning when overwriting files
+--    : 
 function setup()
     --make a table for globals, to keep track of 'em
     G = {}
 
     --set up scene
     G.scene = craft.scene()
-    viewer = G.scene.camera:add(OrbitViewer, vec3(0,0,0), 29, 1, 100)
-    viewer.rx = 13
-    viewer.ry = -108
+    codeaViewer = viewer
+    viewer = G.scene.camera:add(OrbitViewer, vec3(0,0,0), 25, 1, 100)
+    viewer.rx = 22
+    viewer.ry = -25
     G.scene.ambientColor = color(255, 39)
     G.scene.sun.rotation = quat.eulerAngles(25, 125, 0)
     G.scene.physics.gravity = vec3(0,0,0)    
@@ -58,20 +61,12 @@ function setup()
         "VE_RoboDog",
         "VE_Car",
     })
+    
+
     --load last saved model or default model
     local nameToLoad = readProjectData("filename", "VE_LittleFantasyDude")
     G.volumeTools:loadFile(nameToLoad, {G.tool})
     GridSizeX, GridSizeY, GridSizeZ = G.volume:size()
-
-    --[[
-    textOpacity = 255
-    textTime = DeltaTime
-    fadeStarted = false
-    ]]
-
-    --copter = VoxelCopter(G.scene)
-   -- copter.copterModel.scale = vec3(0.1, 0.1, 0.1)
-    
 end
 
 function makeLegacyPlayer(globals)
@@ -240,7 +235,6 @@ function addParameters()
         G.tool.toolColor = color(hsvToRgb(hue, saturation, num))
     end)
     
-    
     parameter.text("Filename", readProjectData("filename") or "VE_LittleFantasyDude",
     function(t)
         saveProjectData("filename", Filename)
@@ -251,8 +245,28 @@ function addParameters()
         GridSizeX, GridSizeY, GridSizeZ = G.volume:size()
     end)
     
-    parameter.action("Save", function() 
+    -- Create the modal to confirm overwriting a file
+    G.overwriteModal = ModalDialog(nil, nil,
+    function() 
+        -- Confirm overwrite action
         G.volumeTools:saveFile(Filename)
+        print("saved ", asset..Filename)
+    end, 
+    function() 
+        G.overwriteModal:hide()
+    end)
+    
+    parameter.action("Save", function() 
+        --try to load in case it already exists
+        local exists = G.volumeTools:fileExists(Filename)
+        print("exists: ", exists)
+        if exists then
+            local message = "The file "..Filename.." already exists, and will be overwritten. Are you sure?"
+            G.overwriteModal:show("Warning", message)
+        else
+            print(asset..Filename)
+            G.volumeTools:saveFile(Filename)
+        end
     end)    
     
     parameter.integer("nudgeX", -1, 1, 0)
@@ -319,6 +333,7 @@ function draw()
     G.shelf.screenTopPanel:update()
     G.shelf.screenTopPanel:draw()
     
+    G.overwriteModal:draw()
     --[[
     if G.player.isLegacy then
         G.player:update()

@@ -13,13 +13,15 @@ function Shelf:init(omniTool, volumeTools, standardizedUnit, buttonRadius, x, y,
     UI.Panel.init(self, x, y, w, h)
     self.fill = nil
     self.startColor = color(12, 87, 215)
+    self.helpTextColor = color(0, 255, 240)
+    self.helpLabelDelay = 13.5 * 60
     self.tool = omniTool
     self.volumeTools = volumeTools
     local paddingBetweenSections = self.unit * 0.3
 
     --make buttons that have to be accessed outside this class
     self:makeColorChooser()
-    self.idleButton = self:makeRoundToolButton("🚁", OmniTool.TOOL_NONE, "flying mode")
+    self.idleButton = self:makeRoundToolButton("🚁", OmniTool.TOOL_NONE, "move")
     self.idleButton.selected = false
     
     local topPanelWidth = self.buttonRadius * 6
@@ -30,19 +32,12 @@ function Shelf:init(omniTool, volumeTools, standardizedUnit, buttonRadius, x, y,
     self.screenTopPanel.fill = color(233, 89, 80, 0)
     
     self.toolTypeButtons = {
-        self:makeRoundToolTypeButton("◾️", OmniTool.TOOL_TYPE_POINT, "single-block mode"),
-        self:makeRoundToolTypeButton("⬛️", OmniTool.TOOL_TYPE_BOX, "area-drag mode")
+        self:makeRoundToolTypeButton("◾️", OmniTool.TOOL_TYPE_POINT, "blocks"),
+        self:makeRoundToolTypeButton("⬛️", OmniTool.TOOL_TYPE_BOX, "boxes")
     }
-    --[[
-    if self.tool.toolType == OmniTool.TOOL_TYPE_POINT then
-        self.toolTypeButtons[1].selected = true
-    else 
-        self.toolTypeButtons[2].selected = true
-    end
-    ]]
-    
+
     --set up the different sections on the shelf
-    local mirrorX = self:roundButton("x|x", "X axis mirroring")
+    local mirrorX = self:roundButton("x|x", "mirror X")
     mirrorX.action = function(b) 
         b.selected = not b.selected
         self.tool.shouldMirror.x = b.selected
@@ -52,7 +47,7 @@ function Shelf:init(omniTool, volumeTools, standardizedUnit, buttonRadius, x, y,
             self.toolTip = ""
         end 
     end
-    local mirrorY = self:roundButton("y|y", "Y axis mirroring")
+    local mirrorY = self:roundButton("y|y", "mirror Y")
     mirrorY.action = function(b) 
         b.selected = not b.selected
         self.tool.shouldMirror.y = b.selected
@@ -62,7 +57,7 @@ function Shelf:init(omniTool, volumeTools, standardizedUnit, buttonRadius, x, y,
             self.toolTip = ""
         end       
     end
-    local mirrorZ = self:roundButton("z|z", "Z axis mirroring")
+    local mirrorZ = self:roundButton("z|z", "mirror Z")
     mirrorZ.action = function(b) 
         b.selected = not b.selected
         self.tool.shouldMirror.z = b.selected
@@ -103,9 +98,9 @@ function Shelf:init(omniTool, volumeTools, standardizedUnit, buttonRadius, x, y,
     
     self.toolsSection = self:makeSection("tools", 
     {
-        self:makeRoundToolButton("✏️", OmniTool.TOOL_ADD, "add blocks"),
-        self:makeRoundToolButton("💣", OmniTool.TOOL_ERASE, "delete blocks"), 
-        self:makeRoundToolButton("💅🏻", OmniTool.TOOL_REPLACE, "paint blocks"),
+        self:makeRoundToolButton("✏️", OmniTool.TOOL_ADD, "draw"),
+        self:makeRoundToolButton("💣", OmniTool.TOOL_ERASE, "delete"), 
+        self:makeRoundToolButton("💅🏻", OmniTool.TOOL_REPLACE, "paint"),
         self:makeRoundToolButton("💉", OmniTool.TOOL_GET, "get color")
     }, true)
     self.toolsSection.children[1].selected = true
@@ -122,6 +117,11 @@ function Shelf:init(omniTool, volumeTools, standardizedUnit, buttonRadius, x, y,
     end
     self:makeSection("undo/redo", 
     { undoButton, redoButton }, true)  
+    
+    --make help button
+    self.showHelpLabels = false
+    self.helpLabelFade = 0
+    self:makeHelpButton()
     
     --lay out all the shelf's children vertically
     self:layoutVertical(paddingBetweenSections, false)
@@ -140,7 +140,21 @@ function Shelf:init(omniTool, volumeTools, standardizedUnit, buttonRadius, x, y,
     self.toolTip = ""
     self.toolTipOpacity = 255
     self.firstToolTipShowing = true
+    
+
+    
 end
+
+function Shelf:makeHelpButton()
+    local helpButton = self:roundButton("🤔", "help")
+    helpButton.action = function(b)
+        self.showHelpLabels = not self.showHelpLabels
+        self.helpLabelFade = 255  -- Reset the fade value
+        self.helpLabelDelay = 13.5 * 60  -- Reset the delay assuming 60 fps.
+    end
+    self:makeSection("help button", {helpButton}, true)
+end
+
 
 function Shelf:draw()
     UI.Panel.draw(self) 
@@ -163,7 +177,8 @@ function Shelf:draw()
         fill(30, 126, 107, self.toolTipOpacity)
         text(self.toolTip, WIDTH/2 + 1, HEIGHT/2 - 2)
         popStyle()
-        fill(0, 255, 240, self.toolTipOpacity)
+        local c = self.helpTextColor
+        fill(c.x, c.y, c.z, self.toolTipOpacity)
         text(self.toolTip, WIDTH/2, HEIGHT/2)
         popMatrix()
         popStyle()
@@ -180,6 +195,89 @@ function Shelf:draw()
             self.toolTip = ""
             self.toolTipOpacity = 255
             self.fadeStarted = false
+        end
+    end
+    if self.showHelpLabels then
+        -- If there's a delay, decrement it
+        if self.helpLabelDelay > 0 then
+            self.helpLabelDelay = self.helpLabelDelay - 1
+            -- Once delay is over, start fading out the labels
+        elseif self.helpLabelFade > 0 then
+            self.helpLabelFade = self.helpLabelFade - 5
+            -- If completely faded out, turn off help labels
+        else
+            self.showHelpLabels = false
+        end
+        
+        -- As long as there's delay or visible fade, draw the labels
+        if self.helpLabelDelay > 0 or self.helpLabelFade > 0 then
+            self:setupTextStyles()
+            self:drawShelfLabels()
+            self:drawLabelsBelow()
+            popStyle()  -- Ensure to pop the style to reset any changes made by setupTextStyles
+        end
+    end
+    
+end
+
+function Shelf:setupTextStyles()
+    pushStyle()
+    font("HelveticaNeue-Light")
+    fontSize(self.buttonRadius * 0.3)
+    textAlign(CENTER)
+    textMode(CORNER)
+    local c = self.helpTextColor
+    fill(c.x, c.y, c.z, self.helpLabelFade)
+end
+
+function Shelf:drawLabelToLeft(button, globalX, globalY)
+    if button.toolTipText then
+        local textW, textH = textSize(button.toolTipText)
+        local labelPosX = globalX - textW - 10
+        local labelPosY = globalY + (button.frame.h / 2) - (textH / 2.8)
+        text(button.toolTipText, labelPosX, labelPosY)
+    end
+end
+
+function Shelf:drawLabelsBelow()
+    pushStyle()
+    textMode(CENTER)
+    local yOffset = 0
+    local longTexts = {"mirror X", "mirror Y", "mirror Z"}
+    local stagger = true -- start with stagger for first longText
+    for i, section in pairs(self.screenTopPanel.children) do
+        for _, button in ipairs(section.children) do
+            local globalX, globalY = button.frame.x + section.frame.x + self.screenTopPanel.frame.x, 
+            button.frame.y + section.frame.y + self.screenTopPanel.frame.y
+            if button.toolTipText then
+                local _, textSizeHeight = textSize(button.toolTipText)
+                if table.contains(longTexts, button.toolTipText) then
+                    if stagger then
+                        yOffset = textSizeHeight * 1.1
+                    else
+                        yOffset = 0
+                    end
+                    stagger = not stagger
+                else
+                    yOffset = 0  -- reset yOffset for short texts
+                    stagger = true  -- reset stagger for short texts
+                end
+                local labelPosX = globalX + (button.frame.w / 2)
+                local labelPosY = globalY - yOffset - 20
+                text(button.toolTipText, labelPosX, labelPosY)
+            end
+        end
+    end
+    popStyle()
+end
+
+
+
+function Shelf:drawShelfLabels()
+    for _, section in ipairs(self.children) do
+        for _, button in ipairs(section.children) do
+            local globalX, globalY = button.frame.x + section.frame.x + self.frame.x, button.frame.y + section.frame.y + self.frame.y
+            self:drawLabelToLeft(button, globalX, globalY)
         end
     end
 end
@@ -215,12 +313,12 @@ function Shelf:makeColorChooser(buttonRadius)
     self.colorChooser.unselectedFill = self.color
     self.highlightedFill = color(181, 181, 181, 255)
     self.colorChooser.action = function() 
-        if viewer.mode ~= OVERLAY then
+        if codeaViewer.mode ~= OVERLAY then
             self.toolTip = "show overlay panel"
-            viewer.mode = OVERLAY 
+            codeaViewer.mode = OVERLAY 
         else
             self.toolTip = "hide overlay panel"
-            viewer.mode = FULLSCREEN
+            codeaViewer.mode = FULLSCREEN
         end
     end
 end

@@ -18,11 +18,18 @@ function VolumeTools:saveSnapshot()
     end
 end
 
+-- check if a volume file exists
+function VolumeTools:fileExists(filename)
+    local fullName = filename..".cvox"
+    local assetKey = asset.documents[fullName]
+    return assetKey ~= nil
+end
+
+
 --save a volume file
 function VolumeTools:saveFile(filename)
     self.volume:save("Documents:"..filename..".cvox")
     local sizeX, sizeY, sizeZ = self.volume:size()
-    --sizeX, sizeY, sizeZ = sizeX + 1, sizeY + 1, sizeZ + 1
 end
 
 --load a saved file
@@ -30,7 +37,6 @@ function VolumeTools:loadFile(filename, delegates)
     self.volume:load("Documents:"..Filename)
     local sizeX, sizeY, sizeZ = self.volume:size()
     self.volume:resize(sizeX, sizeY, sizeZ)
-    --sizeX, sizeY, sizeZ = sizeX + 1, sizeY + 1, sizeZ + 1
     self.currentSnapshotGridSize = vec3(sizeX, sizeY, sizeZ)
     viewer.target = vec3(sizeX/2 + 0.5, sizeY/2 + 0.5, sizeZ/2 + 0.5)
     --delegates must have an updateGrids function
