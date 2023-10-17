@@ -7,6 +7,12 @@ function TouchesManager:init(player, omniTool, shelf)
 end
 
 function TouchesManager:touched(touch)
+    -- Check if the modal dialog is currently visible
+    if G.overwriteModal and G.overwriteModal.isVisible then
+        -- We can simply return true here, as the modal dialog uses CurrentTouch
+        return true
+    end
+    
     -- Always check for touches on the shelf, regardless of the toolMode
     local shelfTapped = self.shelf:hitTest(touch.x, touch.y) or self.shelf.screenTopPanel:hitTest(touch.x, touch.y)
     if shelfTapped then
